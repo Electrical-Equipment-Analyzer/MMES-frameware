@@ -1,0 +1,5 @@
+.hg*
+mbed/
+Library/
+Debug/
+*.launch
