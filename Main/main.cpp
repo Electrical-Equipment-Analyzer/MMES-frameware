@@ -14,6 +14,8 @@
 
 #include <math.h>
 
+#include "state.h"
+
 // Host PC Communication channels
 Serial pc(P0_0, P0_1);
 
@@ -28,11 +30,6 @@ Acceleration acc(A0, A1, A2);
 void led2_thread(void const *args) {
     while (true) {
         led2 = !led2;
-//        time_t seconds = time(NULL);
-//        char buffer[32];
-//        strftime(buffer, 32, "%Y/%m/%d %H:%M:%S\n", localtime(&seconds));
-//        lcd.setAddress(0, 1);
-//        lcd.printf("%s\r\n", buffer);
         Thread::wait(500);
     }
 }
@@ -100,132 +97,23 @@ void test_ISO() {
     acquire();
     lcd.printf("%.2f %.2f %.2f", rms(acc.vx, _ACCELERATION_LENGTH) * 1000, rms(acc.vy, _ACCELERATION_LENGTH) * 1000,
             rms(acc.vz, _ACCELERATION_LENGTH) * 1000);
+    while (joystick.getStatus() == Joystick::none);
 }
 
 void test_NEMA() {
     lcd.cls();
     lcd.printf(" NEMA MG1\n");
     acquire();
-    lcd.printf("%.2f %.2f %.2f", vpp(acc.sx, _ACCELERATION_LENGTH) * 1000000,
+    lcd.printf("%3.2f %3.2f %3.2f", vpp(acc.sx, _ACCELERATION_LENGTH) * 1000000,
             vpp(acc.sy, _ACCELERATION_LENGTH) * 1000000, vpp(acc.sz, _ACCELERATION_LENGTH) * 1000000);
-}
-
-static const uint8_t dt[][2] = { { 0, 5 }, { 0, 6 }, { 0, 7 }, { 0, 8 }, { 0, 10 }, { 0, 11 }, { 0, 13 }, { 0, 14 }, {
-        1, 6 }, { 1, 7 }, { 1, 9 }, { 1, 10 }, { 1, 12 }, { 1, 13 } };
-//static const u;
-
-uint8_t c = 0;
-
-void date() {
-    time_t seconds = time(NULL);
-    char buffer[32];
-    strftime(buffer, 32, "Date:%Y/%m/%d\nTime: %H:%M:%S", localtime(&seconds));
-    lcd.cls();
-    lcd.printf("%s", buffer);
-    lcd.setAddress(dt[c][1], dt[c][0]);
-}
-
-void setting_date_thread(void const *args) {
-    while (true) {
-        date();
-        Thread::wait(1000);
-    }
-}
-
-void date_config(int dir) {
-    time_t seconds = time(NULL);
-    struct tm *t = localtime(&seconds);
-    switch (c) {
-        case 0:
-//            t->tm_year += 1000;
-            break;
-        case 1:
-            t->tm_year += dir * 100;
-            break;
-        case 2:
-            t->tm_year += dir * 10;
-            break;
-        case 3:
-            t->tm_year += dir;
-            break;
-        case 4:
-            t->tm_mon += dir * 10;
-            break;
-        case 5:
-            t->tm_mon += dir;
-            break;
-        case 6:
-            t->tm_mday += dir * 10;
-            break;
-        case 7:
-            t->tm_mday += dir;
-            break;
-        case 8:
-            t->tm_hour += dir * 10;
-            break;
-        case 9:
-            t->tm_hour += dir;
-            break;
-        case 10:
-            t->tm_min += dir * 10;
-            break;
-        case 11:
-            t->tm_min += dir;
-            break;
-        case 12:
-            t->tm_sec += dir * 10;
-            break;
-        case 13:
-            t->tm_sec += dir;
-            break;
-    }
-    set_time(mktime(t));
-}
-
-void setting_date() {
-    Thread thread_date(setting_date_thread);
-    Joystick::Status last_status = Joystick::right;
-    lcd.setCursor(TextLCD::CurOn_BlkOn);
-//    uint8_t c = 0;
-    while (true) {
-        Joystick::Status status = joystick.getStatus();
-        if (status != last_status) {
-            switch (status) {
-                case Joystick::none:
-                    break;
-                case Joystick::up:
-                    date_config(1);
-                    break;
-                case Joystick::down:
-                    date_config(-1);
-                    break;
-                case Joystick::left:
-                    if (c > 0) {
-                        c--;
-                    }
-                    break;
-                case Joystick::right:
-                    if (c < 13) {
-                        c++;
-                    } else {
-                        lcd.setCursor(TextLCD::CurOff_BlkOff);
-                        return;
-                    }
-                    break;
-                case Joystick::press:
-                    break;
-                default:
-                    break;
-            }
-            date();
-            last_status = status;
-        }
-    }
+    while (joystick.getStatus() == Joystick::none);
 }
 
 int main() {
     pc.baud(115200);
     pc.printf("Booting...\r\n");
+
+    State state(&lcd, &joystick);
 
     lcd.setPower(true);
     lcd.cls();
@@ -241,22 +129,29 @@ int main() {
 //User Menu
     Menu menu_root(" Motor Detector", NULL);
 
+
+    FunctionPointer fun_iso(&test_ISO);
+    FunctionPointer fun_nema(&test_NEMA);
+
     //Menu - Run Test
     Menu menu_test(" Run Test", &menu_root);
-    menu_test.add(Selection(&test_ISO, 0, NULL, " ISO-10816")); // ISO-10816
-    menu_test.add(Selection(&test_NEMA, 1, NULL, " NEMA MG1")); // NEMA MG1
+    menu_test.add(Selection(&fun_iso, 0, NULL, " ISO-10816")); // ISO-10816
+    menu_test.add(Selection(&fun_nema, 1, NULL, " NEMA MG1")); // NEMA MG1
 
     //Menu - Status
     Menu menu_status(" Status", &menu_root);
     menu_status.add(Selection(NULL, 0, NULL, " OK"));
     menu_status.add(Selection(NULL, 1, NULL, " XYZ"));
 
+
+
+    FunctionPointer fun_sd(&state, &State::setting_date);
     //Menu - Setting
     Menu menu_setting(" Setting", &menu_root);
     menu_setting.add(Selection(NULL, 0, NULL, " inch/mm"));
     menu_setting.add(Selection(NULL, 1, NULL, " USB"));
     menu_setting.add(Selection(NULL, 2, NULL, " Network"));
-    menu_setting.add(Selection(&setting_date, 3, NULL, "Date/Time"));
+    menu_setting.add(Selection(&fun_sd, 3, NULL, "Date/Time"));
 
     //Menu - About
     Menu menu_about(" About", &menu_root);
