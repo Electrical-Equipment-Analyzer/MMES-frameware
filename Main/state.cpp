@@ -103,13 +103,12 @@ void State::setting_date() {
                 case Joystick::right:
                     if (c < 13) {
                         c++;
-                    } else {
-                        _lcd->setCursor(TextLCD::CurOff_BlkOff);
-                        flipper.detach();
-                        return;
                     }
                     break;
                 case Joystick::press:
+                    _lcd->setCursor(TextLCD::CurOff_BlkOff);
+                    flipper.detach();
+                    return;
                     break;
                 default:
                     break;
