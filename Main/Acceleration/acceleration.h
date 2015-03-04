@@ -5,12 +5,14 @@
 //required to use mbed functions
 #include "mbed.h"
 
-#define _ACCELERATION_LENGTH 100
-#define _ACCELERATION_VCC 3.2f
+#include "Sampling.h"
+
+//#define _ACCELERATION_LENGTH 2048
+//#define _ACCELERATION_VCC 3.2f
 
 /** Class: Acceleration
  *
- * Used for reading from an digital joystick
+ * Acceleration
  *
  * Example:
  *
@@ -27,37 +29,16 @@ class Acceleration {
          * @param y    Y asix
          * @param z    Z asix
          */
-        Acceleration(PinName x, PinName y, PinName z);
-
-        void tick();
+        Acceleration();
         
-        void start(timestamp_t t);
-        
-        bool isStop();
-        
-        double ax[_ACCELERATION_LENGTH];
-        double ay[_ACCELERATION_LENGTH];
-        double az[_ACCELERATION_LENGTH];
 
-        double vx[_ACCELERATION_LENGTH];
-        double vy[_ACCELERATION_LENGTH];
-        double vz[_ACCELERATION_LENGTH];
+        void sample();
 
-        double sx[_ACCELERATION_LENGTH];
-        double sy[_ACCELERATION_LENGTH];
-        double sz[_ACCELERATION_LENGTH];
+        void print(Serial *console);
+        
 
     private:
 
-        /** Regular mbed pins bus
-         */
-        AnalogIn _x, _y, _z;
-        
-        uint8_t _index;
-        
-        Ticker _flipper;
-
-        double _t;
 };
 
 #endif
