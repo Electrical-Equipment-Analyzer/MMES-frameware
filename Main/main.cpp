@@ -1,3 +1,5 @@
+
+#include "mbed.h"
 #include "main.h"
 
 #include "FunctionPointer.h"
@@ -11,6 +13,11 @@
 #include "state.h"
 #include "analysis.h"
 
+#include "ConfigFile.h"
+ConfigFile cfg;
+
+#include "SDFileSystem.h"
+SDFileSystem sd(p5, p6, p7, P2_2, "sd"); // the pinout on the mbed Cool Components workshop board
 
 DigitalOut led2(P0_22);
 void led2_thread(void const *args) {
@@ -27,9 +34,89 @@ void ain_thread(void const *args) {
     }
 }
 
+void test_sdcf() {
+
+    pc.printf("Hello World!\n");
+
+    mkdir("/sd/mydir", 0777);
+
+    FILE *fp = fopen("/sd/mydir/sdtest.txt", "w");
+    if (fp == NULL) {
+        pc.printf("Could not open file for write\n");
+    }
+    fprintf(fp, "Hello fun SD Card World!");
+    fclose(fp);
+
+    pc.printf("Goodbye World!\n");
+
+    char *key = "MyKey";
+    char value[BUFSIZ];
+    /*
+     * Read a configuration file from a mbed.
+     */
+    if (!cfg.read("/sd/output.cfg")) {
+        pc.printf("Failure to read a configuration file.\n");
+    }
+
+    /*
+     * Get a configuration value.
+     */
+    if (cfg.getValue(key, &value[0], sizeof(value))) {
+        pc.printf("'%s'='%s'\n", key, value);
+    }
+
+    /*
+     * Set a configuration value.
+     */
+    if (!cfg.setValue("MyKey", "TestValue")) {
+        pc.printf("Failure to set a value.\n");
+    }
+
+    /*
+     * Write to a file.
+     */
+    if (!cfg.write("/sd/output.cfg")) {
+        pc.printf("Failure to write a configuration file.\n");
+    }
+}
+
+I2C i2c(p28, p27);
+const int addr = 0xA0;
+
+void test_rom() {
+    pc.printf("rom\r\n");
+
+
+    char data[10];
+    data[0] = 0x00;
+    data[1] = 0x00;
+    data[2] = 0x12;
+    data[3] = 0x34;
+    data[4] = 0x56;
+    data[5] = 0x78;
+    data[6] = 0x90;
+    data[7] = 0xAA;
+    data[8] = 0xBB;
+    data[9] = 0xCC;
+    data[10] = 0xDD;
+    i2c.write(addr, data, 10);
+
+    char cmd[2];
+    cmd[0] = 0x00;
+    cmd[1] = 0x00;
+    i2c.write(addr, cmd, 2);
+    uint8_t i = 0;
+    for (i = 0; i < 10; i++) {
+        i2c.read(addr | 0x01, cmd, 1);
+        pc.printf("%x\r\n", cmd[0]);
+    }
+}
 
 int main() {
     pc.baud(115200);
+
+    test_rom();
+
     pc.printf("Booting...\r\n");
 
     State state(&lcd, &joystick);
@@ -48,7 +135,6 @@ int main() {
 //User Menu
     Menu menu_root(" Motor Detector", NULL);
 
-
     FunctionPointer fun_iso(&test_ISO);
     FunctionPointer fun_nema(&test_NEMA);
 
@@ -61,8 +147,6 @@ int main() {
     Menu menu_status(" Status", &menu_root);
     menu_status.add(Selection(NULL, 0, NULL, " OK"));
     menu_status.add(Selection(NULL, 1, NULL, " XYZ"));
-
-
 
     FunctionPointer fun_sd(&state, &State::setting_date);
     //Menu - Setting
