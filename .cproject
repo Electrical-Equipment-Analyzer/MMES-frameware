@@ -51,7 +51,7 @@
                                   
                                     <listOptionValue builtIn="false" value="ARM_MATH_CM3"/>
                                   
-                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425354121.76"/>
+                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425461297.22"/>
                                   
                                     <listOptionValue builtIn="false" value="__MBED__=1"/>
                                   
@@ -65,6 +65,8 @@
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/Digital-Joystick}&quot;"/>
+                                    
+                                        <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/at45db161d}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/FATFileSystem}&quot;"/>
                                     
@@ -139,7 +141,7 @@
                                   
                                     <listOptionValue builtIn="false" value="ARM_MATH_CM3"/>
                                   
-                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425354121.76"/>
+                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425461297.22"/>
                                   
                                     <listOptionValue builtIn="false" value="__MBED__=1"/>
                                   
@@ -153,6 +155,8 @@
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/Digital-Joystick}&quot;"/>
+                                    
+                                        <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/at45db161d}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/FATFileSystem}&quot;"/>
                                     
@@ -227,6 +231,8 @@
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/Digital-Joystick}&quot;"/>
+                                    
+                                        <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/at45db161d}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/FATFileSystem}&quot;"/>
                                     
@@ -1150,7 +1156,7 @@
                                   
                                     <listOptionValue builtIn="false" value="ARM_MATH_CM3"/>
                                   
-                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425354121.76"/>
+                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425461297.22"/>
                                   
                                     <listOptionValue builtIn="false" value="__MBED__=1"/>
                                   
@@ -1165,6 +1171,8 @@
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/Digital-Joystick}&quot;"/>
+                                    
+                                        <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/at45db161d}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/FATFileSystem}&quot;"/>
                                     
@@ -1239,7 +1247,7 @@
                                   
                                     <listOptionValue builtIn="false" value="ARM_MATH_CM3"/>
                                   
-                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425354121.76"/>
+                                    <listOptionValue builtIn="false" value="MBED_BUILD_TIMESTAMP=1425461297.22"/>
                                   
                                     <listOptionValue builtIn="false" value="__MBED__=1"/>
                                   
@@ -1278,6 +1286,8 @@
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/Digital-Joystick}&quot;"/>
+                                    
+                                        <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/at45db161d}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/FATFileSystem}&quot;"/>
                                     
@@ -1355,6 +1365,8 @@
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/Digital-Joystick}&quot;"/>
+                                    
+                                        <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/at45db161d}&quot;"/>
                                     
                                         <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Library/FATFileSystem}&quot;"/>
                                     
