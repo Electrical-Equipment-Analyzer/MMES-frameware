@@ -41,15 +41,15 @@ void Acceleration::sample() {
     while (!sampling.isStop()) {
     }
 
-    for (i = 0; i < _SAMPLING_LENGTH; i++) {
-        sampling.y[i] = i;
-        pc.printf("%x, ", sampling.x[i]);
-        if ((i & 0x07) == 0x07) {
-            pc.printf("\r\n");
-            wait_ms(10);
-        }
-    }
-    pc.printf("==========\r\n");
+//    for (i = 0; i < _SAMPLING_LENGTH; i++) {
+//        sampling.y[i] = i;
+//        pc.printf("%x, ", sampling.x[i]);
+//        if ((i & 0x07) == 0x07) {
+//            pc.printf("\r\n");
+//            wait_ms(10);
+//        }
+//    }
+//    pc.printf("==========\r\n");
 
     for (i = 2; i < 128; i++) {
         flash.BlockErase(i);
@@ -142,6 +142,40 @@ void flash_integral(uint16_t from, uint16_t to, uint16_t length, double t) {
     }
 }
 
+double flash_rms(uint16_t from, uint16_t length) {
+    uint16_t ps = flash.getInfo()->pageSize;
+    uint16_t i;
+    uint16_t offset = 0;
+    double sum = 0;
+    while (offset < length) {
+        double d[ps];
+        flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
+        for (i = 0; i < ps; i++) {
+            sum += d[i] * d[i];
+        }
+        offset += ps;
+    }
+    return sqrt(sum / length);
+}
+
+double flash_vpp(uint16_t from, uint16_t length) {
+    uint16_t ps = flash.getInfo()->pageSize;
+    uint16_t i;
+    uint16_t offset = 0;
+    double max;
+    double min;
+    while (offset < length) {
+        double d[ps];
+        flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
+        for (i = 0; i < ps; i++) {
+            max = max > d[i] ? max : d[i];
+            min = min < d[i] ? min : d[i];
+        }
+        offset += ps;
+    }
+    return max - min;
+}
+
 void flash_print(uint16_t addr_x, uint16_t addr_y, uint16_t addr_z, uint16_t length) {
     uint16_t i;
     uint16_t ps = flash.getInfo()->pageSize;
@@ -189,6 +223,13 @@ void Acceleration::count() {
     flash_integral(_flash_page_v_y, _flash_page_s_y, _SAMPLING_LENGTH, dt);
     flash_integral(_flash_page_v_z, _flash_page_s_z, _SAMPLING_LENGTH, dt);
 
+    _v_x_rms = flash_rms(_flash_page_v_x, _SAMPLING_LENGTH);
+    _v_y_rms = flash_rms(_flash_page_v_y, _SAMPLING_LENGTH);
+    _v_z_rms = flash_rms(_flash_page_v_z, _SAMPLING_LENGTH);
+
+    _s_x_vpp = flash_vpp(_flash_page_s_x, _SAMPLING_LENGTH);
+    _s_y_vpp = flash_vpp(_flash_page_s_y, _SAMPLING_LENGTH);
+    _s_z_vpp = flash_vpp(_flash_page_s_z, _SAMPLING_LENGTH);
+
     flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _SAMPLING_LENGTH);
 }
-

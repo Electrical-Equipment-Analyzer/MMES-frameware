@@ -36,9 +36,12 @@ class Acceleration {
 
         void count();
         
+        double _v_x_rms, _v_y_rms, _v_z_rms;
+        double _s_x_vpp, _s_y_vpp, _s_z_vpp;
 
     private:
         double _sps;
+
 
 };
 
