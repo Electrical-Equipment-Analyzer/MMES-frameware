@@ -18,8 +18,6 @@ ConfigFile cfg;
 #include "SDFileSystem.h"
 SDFileSystem sd(p5, p6, p7, P2_2, "sd"); // the pinout on the mbed Cool Components workshop board
 
-#include "at45db161d.h"
-
 DigitalOut led2(P0_22);
 void led2_thread(void const *args) {
     while (true) {
@@ -81,91 +79,8 @@ void test_sdcf() {
     }
 }
 
-#define PAGE_SIZE 264
-
-SPI spi(p5, p6, p7);
-ATD45DB161D memory(&spi, P2_2);
-
-void test_rom() {
-    uint16_t a[] = {0x1234, 0x5678, 0x9ABC};
-    memory.write(0, a, sizeof(a));
-
-    uint16_t b[3];
-    memory.read(0, b, sizeof(b));
-    pc.printf("%x, %x, %x\r\n", b[0], b[1], b[2]);
-
-    int i;
-    uint8_t buf[PAGE_SIZE];
-    Timer t;
-    ATD45DB161D::ID id;
-
-//    memory.Init();
-//    spi.frequency(10000000);
-    wait_ms(500);
-
-    memory.ReadManufacturerAndDeviceID(&id);
-    pc.printf("RAM Manufacturer ID : %02x\r\n", id.manufacturer);
-    pc.printf("RAM Device ID : %02x %02x\r\n", id.device[0], id.device[1]);
-    pc.printf("RAM EIL : %02x\r\n", id.extendedInfoLength);
-    wait_ms(10);
-
-    pc.printf("\r\nHELLO test\r\n");
-
-    pc.printf("RAM write\r\n");
-    memcpy(buf, "Hello!", 6);
-    memory.write(0, buf, 6);
-    for (i = 0; i < PAGE_SIZE; i++) {
-        buf[i] = i;
-    }
-    memory.write(6, buf, PAGE_SIZE - 6);
-
-    wait(1);
-    memset(buf, 0, PAGE_SIZE);
-
-    pc.printf("RAM read\r\n");
-    memory.read(0, buf, PAGE_SIZE);
-    for (i = 0; i < PAGE_SIZE; i++) {
-        pc.printf(" %02x", buf[i]);
-        if ((i & 0x0f) == 0x0f) pc.printf("\r\n");
-    }
-
-    wait(1);
-
-    pc.printf("\r\nWrite/Read time\r\n");
-
-    pc.printf("RAM write\r\n");
-    t.reset();
-    t.start();
-    for (i = 0; i < 0x20000; i += PAGE_SIZE) {
-        buf[0] = (i >> 8) & 0xff;
-//        buf[0] = i;
-        memory.write(i, buf, PAGE_SIZE);
-        if ((i & 0x0fff) == 0) printf(".");
-    }
-    t.stop();
-    pc.printf("\r\ntime %f, %f KBytes/sec\r\n", t.read(), (float) 0x20000 / 1024 / t.read());
-
-    wait(1);
-
-    pc.printf("RAM read\r\n");
-    t.reset();
-    t.start();
-    for (i = 0; i < 0x20000; i += PAGE_SIZE) {
-        memory.read(i, buf, PAGE_SIZE);
-        if (buf[0] != ((i >> 8) & 0xff)) {
-            pc.printf("error %d\r\n", i);
-            break;
-        }
-        if ((i & 0x0fff) == 0) printf(".");
-    }
-    t.stop();
-    pc.printf("\r\ntime %f, %f KBytes/sec\r\n", t.read(), 0x20000 / 1024 / t.read());
-}
-
 int main() {
     pc.baud(115200);
-
-    test_rom();
 
     pc.printf("Booting...\r\n");
 
