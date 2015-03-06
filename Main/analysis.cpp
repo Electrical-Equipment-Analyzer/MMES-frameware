@@ -51,7 +51,7 @@ Acceleration acc;
 
 void acquire() {
     acc.sample();
-    acc.print(&pc);
+    acc.count();
 //    acc.start(500);
 //    while (!acc.isStop()) {
 //    }

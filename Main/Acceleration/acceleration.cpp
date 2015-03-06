@@ -4,20 +4,44 @@
 #include "at45db161d.h"
 ATD45DB161D flash(&spi, P2_2);
 
+#define _flash_page_adc_x 16
+#define _flash_page_adc_y 32
+#define _flash_page_adc_z 48
+
+#define _flash_page_vdc_x 64
+#define _flash_page_vdc_y 128
+#define _flash_page_vdc_z 192
+#define _flash_page_vac_x 256
+#define _flash_page_vac_y 320
+#define _flash_page_vac_z 384
+
+#define _flash_page_g_x 256
+#define _flash_page_g_y 320
+#define _flash_page_g_z 384
+
+#define _flash_page_a_x 448
+#define _flash_page_a_y 512
+#define _flash_page_a_z 576
+#define _flash_page_v_x 640
+#define _flash_page_v_y 704
+#define _flash_page_v_z 768
+#define _flash_page_s_x 832
+#define _flash_page_s_y 896
+#define _flash_page_s_z 960
+
 Acceleration::Acceleration() {
+    _sps = 10000;
 }
 
 void Acceleration::sample() {
     uint16_t i;
 
     Sampling sampling(A0, A1, A2);
-
-    sampling.start(200);
+    sampling.start(1000000.0f / _sps);
     while (!sampling.isStop()) {
     }
 
     for (i = 0; i < _SAMPLING_LENGTH; i++) {
-//        pc.printf("%f, %f, %f, \r", acc.ax[i], acc.vx[i], acc.sx[i]);
         sampling.y[i] = i;
         pc.printf("%x, ", sampling.x[i]);
         if ((i & 0x07) == 0x07) {
@@ -27,28 +51,34 @@ void Acceleration::sample() {
     }
     pc.printf("==========\r\n");
 
-    uint16_t ps = flash.getInfo()->pageSize;
-
-    for (i = 2; i < 8; i++) {
+    for (i = 2; i < 128; i++) {
         flash.BlockErase(i);
     }
-    flash.write(ps * 16, sampling.x, sizeof(sampling.x));
-    flash.write(ps * 32, sampling.y, sizeof(sampling.y));
-    flash.write(ps * 48, sampling.z, sizeof(sampling.z));
+    flash.writeBuffer(_flash_page_adc_x, sampling.x, sizeof(sampling.x));
+    flash.writeBuffer(_flash_page_adc_y, sampling.y, sizeof(sampling.y));
+    flash.writeBuffer(_flash_page_adc_z, sampling.z, sizeof(sampling.z));
+}
+
+double math_vac_g(double vac) {
+    return vac / 0.016;
+}
+
+double math_g_a(double g) {
+    return g / 9.80665;
 }
 
 void flash_adc_vdc(uint16_t from, uint16_t to, uint16_t length) {
     uint16_t i;
     uint16_t ps = flash.getInfo()->pageSize;
     uint16_t offset = 0;
-    uint16_t row[ps];
-    double d[ps];
     while (offset < length) {
-        flash.read(ps * from + offset * 2, row, sizeof(row));
+        uint16_t row[ps];
+        double d[ps];
+        flash.readBuffer(from + (sizeof(uint16_t) * offset / ps), row, sizeof(row));
         for (i = 0; i < ps; i++) {
             d[i] = row[i] * _SAMPLING_VCC / 0xFFF;
         }
-        flash.write(ps * to + offset * 8, d, sizeof(d));
+        flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
         offset += ps;
     }
 }
@@ -57,11 +87,11 @@ void flash_vdc_vac(uint16_t from, uint16_t to, uint16_t length) {
     uint16_t ps = flash.getInfo()->pageSize;
     uint16_t i;
     uint16_t offset;
-    double d[ps];
     double avg = 0;
     offset = 0;
     while (offset < length) {
-        flash.read(ps * from + offset * 8, d, sizeof(d));
+        double d[ps];
+        flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
         for (i = 0; i < ps; i++) {
             avg += d[i];
         }
@@ -70,97 +100,95 @@ void flash_vdc_vac(uint16_t from, uint16_t to, uint16_t length) {
     avg /= length;
     offset = 0;
     while (offset < length) {
-        flash.read(ps * from + offset * 8, d, sizeof(d));
+        double d[ps];
+        flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
         for (i = 0; i < ps; i++) {
             d[i] -= avg;
         }
-        flash.write(ps * to + offset * 8, d, sizeof(d));
+        flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
         offset += ps;
     }
 }
 
-void flash_print(uint16_t addr_x, uint16_t addr_y, uint16_t addr_z) {
-    uint16_t i;
+void flash_function(uint16_t from, uint16_t to, uint16_t length, double (*fun)(double)) {
     uint16_t ps = flash.getInfo()->pageSize;
+    uint16_t i;
     uint16_t offset = 0;
-    uint16_t length = ps;
-    while (offset < _SAMPLING_LENGTH) {
-        double x[length];
-        double y[length];
-        double z[length];
-        flash.read(ps * addr_x + offset * 8, x, sizeof(x));
-        flash.read(ps * addr_y + offset * 8, y, sizeof(y));
-        flash.read(ps * addr_z + offset * 8, z, sizeof(z));
-        for (i = 0; i < length; i++) {
-            pc.printf("%d : %f, %f, %f, \r\n", i + offset, x[i], y[i], z[i]);
-            wait_ms(1);
+    while (offset < length) {
+        double d[ps];
+        flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
+        for (i = 0; i < ps; i++) {
+            d[i] = fun(d[i]);
         }
-        offset += length;
+        flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
+        offset += ps;
     }
 }
 
-#define _flash_page_row_x 16;
-
-void Acceleration::print(Serial *console) {
-
-    flash_adc_vdc(16, 64, _SAMPLING_LENGTH);
-    flash_adc_vdc(32, 128, _SAMPLING_LENGTH);
-    flash_adc_vdc(48, 192, _SAMPLING_LENGTH);
-
-    flash_vdc_vac(64, 256, _SAMPLING_LENGTH);
-    flash_vdc_vac(128, 320, _SAMPLING_LENGTH);
-    flash_vdc_vac(192, 384, _SAMPLING_LENGTH);
-
-    flash_print(64, 128, 192);
-    flash_print(256, 320, 384);
-
-    console->printf("end++++++++++\r\n");
-
+void flash_integral(uint16_t from, uint16_t to, uint16_t length, double t) {
+    uint16_t ps = flash.getInfo()->pageSize;
+    uint16_t i;
+    uint16_t offset = 0;
+    double v = 0;
+    while (offset < length) {
+        double d[ps];
+        flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
+        for (i = 0; i < ps; i++) {
+            v += d[i] * t;
+            d[i] = v;
+        }
+        flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
+        offset += ps;
+    }
 }
 
-//double math_avg(double *v, uint8_t length) {
-//    double total = 0;
-//    uint8_t i = length;
-//    while (i--) {
-//        total += *v++;
-//    }
-//    return total / length;
-//}
-//
-//double math_voltage(double ad) {
-//    return ad * _ACCELERATION_VCC / 0xFFF;
-//}
-//
-//double math_g(double voltage, double avg) {
-//    return (voltage - avg) / 0.016;
-//}
-//
-//double math_a(double g) {
-//    return g / 9.80665;
-//}
-//
-//double math_v(double v, double a, double t) {
-//    return v + (a * t);
-//}
-//
-//double math_s(double v0, double v, double t) {
-//    return (v0 + v) / 2 * t;
-//}
-//
-//void mathArray_v(double *v, double *a, double t, uint8_t length) {
-//    double zero = 0;
-//    while (length--) {
-//        zero = math_v(zero, *a++, t);
-//        *v++ = zero;
-//    }
-//}
-//
-//void mathArray_s(double *s, double *v, double t, uint8_t length) {
-//    double now, zero = 0;
-//    while (length--) {
-//        now = *v++;
-//        *s++ = math_s(zero, now, t);
-//        zero = now;
-//    }
-//}
+void flash_print(uint16_t addr_x, uint16_t addr_y, uint16_t addr_z, uint16_t length) {
+    uint16_t i;
+    uint16_t ps = flash.getInfo()->pageSize;
+    uint16_t offset = 0;
+    while (offset < length) {
+        double x[ps];
+        double y[ps];
+        double z[ps];
+        flash.readBuffer(addr_x + (sizeof(double) * offset / ps), x, sizeof(x));
+        flash.readBuffer(addr_y + (sizeof(double) * offset / ps), y, sizeof(y));
+        flash.readBuffer(addr_z + (sizeof(double) * offset / ps), z, sizeof(z));
+        for (i = 0; i < ps; i++) {
+            pc.printf("%d : %f, %f, %f, \r\n", i + offset, x[i], y[i], z[i]);
+            wait_ms(1);
+        }
+        offset += ps;
+    }
+}
+
+void Acceleration::count() {
+
+    flash_adc_vdc(_flash_page_adc_x, _flash_page_vdc_x, _SAMPLING_LENGTH);
+    flash_adc_vdc(_flash_page_adc_y, _flash_page_vdc_y, _SAMPLING_LENGTH);
+    flash_adc_vdc(_flash_page_adc_z, _flash_page_vdc_z, _SAMPLING_LENGTH);
+
+    flash_vdc_vac(_flash_page_vdc_x, _flash_page_vac_x, _SAMPLING_LENGTH);
+    flash_vdc_vac(_flash_page_vdc_y, _flash_page_vac_y, _SAMPLING_LENGTH);
+    flash_vdc_vac(_flash_page_vdc_z, _flash_page_vac_z, _SAMPLING_LENGTH);
+
+    flash_function(_flash_page_vac_x, _flash_page_g_x, _SAMPLING_LENGTH, &math_vac_g);
+    flash_function(_flash_page_vac_y, _flash_page_g_y, _SAMPLING_LENGTH, &math_vac_g);
+    flash_function(_flash_page_vac_z, _flash_page_g_z, _SAMPLING_LENGTH, &math_vac_g);
+
+    flash_function(_flash_page_g_x, _flash_page_a_x, _SAMPLING_LENGTH, &math_g_a);
+    flash_function(_flash_page_g_y, _flash_page_a_y, _SAMPLING_LENGTH, &math_g_a);
+    flash_function(_flash_page_g_z, _flash_page_a_z, _SAMPLING_LENGTH, &math_g_a);
+
+    double dt = 1 / _sps;
+
+    flash_integral(_flash_page_a_x, _flash_page_v_x, _SAMPLING_LENGTH, dt);
+    flash_integral(_flash_page_a_y, _flash_page_v_y, _SAMPLING_LENGTH, dt);
+    flash_integral(_flash_page_a_z, _flash_page_v_z, _SAMPLING_LENGTH, dt);
+
+    flash_integral(_flash_page_v_x, _flash_page_s_x, _SAMPLING_LENGTH, dt);
+    flash_integral(_flash_page_v_y, _flash_page_s_y, _SAMPLING_LENGTH, dt);
+    flash_integral(_flash_page_v_z, _flash_page_s_z, _SAMPLING_LENGTH, dt);
+
+    flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _SAMPLING_LENGTH);
+}
 

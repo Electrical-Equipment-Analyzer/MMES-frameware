@@ -54,8 +54,6 @@ class Sampling {
         uint16_t _index;
 
         Ticker _flipper;
-
-        double _s;
 };
 
 

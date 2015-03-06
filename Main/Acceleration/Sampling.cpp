@@ -13,7 +13,6 @@ Sampling::Sampling(PinName x, PinName y, PinName z) :
 }
 
 void Sampling::start(timestamp_t us) {
-    _s = us / 1000000.0;
     _index = 0;
     _flipper.attach_us(this, &Sampling::tick, us);
 }

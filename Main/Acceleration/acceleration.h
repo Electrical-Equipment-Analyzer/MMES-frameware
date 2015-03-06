@@ -34,10 +34,11 @@ class Acceleration {
 
         void sample();
 
-        void print(Serial *console);
+        void count();
         
 
     private:
+        double _sps;
 
 };
 
