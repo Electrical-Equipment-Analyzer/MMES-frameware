@@ -11,7 +11,8 @@
 //required to use mbed functions
 #include "mbed.h"
 
-#define _SAMPLING_LENGTH 2048
+#define _SAMPLING_LENGTH 2112
+#define _SAMPLING_VCC 3.3f
 
 /** Class: Sampling
  *

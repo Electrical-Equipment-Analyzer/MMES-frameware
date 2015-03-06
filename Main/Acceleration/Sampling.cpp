@@ -6,8 +6,6 @@
  */
 
 #include "Sampling.h"
-#include "main.h"
-
 
 Sampling::Sampling(PinName x, PinName y, PinName z) :
         _x(x), _y(y), _z(z) {
