@@ -64,7 +64,7 @@ double math_vac_g(double vac) {
 }
 
 double math_g_a(double g) {
-    return g / 9.80665;
+    return g * 9.80665;
 }
 
 void flash_adc_vdc(uint16_t from, uint16_t to, uint16_t length) {
