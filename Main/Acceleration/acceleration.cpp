@@ -2,7 +2,10 @@
 #include "main.h"
 
 #include "at45db161d.h"
-ATD45DB161D flash(&spi, P2_2);
+ATD45DB161D flash(&spi, P2_1);
+
+
+#include "SDFileSystem.h"
 
 #define _flash_page_adc_x 16
 #define _flash_page_adc_y 32
@@ -35,22 +38,10 @@ Acceleration::Acceleration() {
 
 void Acceleration::sample() {
     uint16_t i;
-
     Sampling sampling(A0, A1, A2);
     sampling.start(1000000.0f / _sps);
     while (!sampling.isStop()) {
     }
-
-//    for (i = 0; i < _SAMPLING_LENGTH; i++) {
-//        sampling.y[i] = i;
-//        pc.printf("%x, ", sampling.x[i]);
-//        if ((i & 0x07) == 0x07) {
-//            pc.printf("\r\n");
-//            wait_ms(10);
-//        }
-//    }
-//    pc.printf("==========\r\n");
-
     for (i = 2; i < 128; i++) {
         flash.BlockErase(i);
     }
@@ -196,7 +187,6 @@ void flash_print(uint16_t addr_x, uint16_t addr_y, uint16_t addr_z, uint16_t len
 }
 
 void Acceleration::count() {
-
     flash_adc_vdc(_flash_page_adc_x, _flash_page_vdc_x, _SAMPLING_LENGTH);
     flash_adc_vdc(_flash_page_adc_y, _flash_page_vdc_y, _SAMPLING_LENGTH);
     flash_adc_vdc(_flash_page_adc_z, _flash_page_vdc_z, _SAMPLING_LENGTH);
@@ -214,7 +204,6 @@ void Acceleration::count() {
     flash_function(_flash_page_g_z, _flash_page_a_z, _SAMPLING_LENGTH, &math_g_a);
 
     double dt = 1 / _sps;
-
     flash_integral(_flash_page_a_x, _flash_page_v_x, _SAMPLING_LENGTH, dt);
     flash_integral(_flash_page_a_y, _flash_page_v_y, _SAMPLING_LENGTH, dt);
     flash_integral(_flash_page_a_z, _flash_page_v_z, _SAMPLING_LENGTH, dt);
@@ -233,3 +222,27 @@ void Acceleration::count() {
 
     flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _SAMPLING_LENGTH);
 }
+
+void Acceleration::log() {
+    time_t seconds = time(NULL);
+    char buffer[20];
+    strftime(buffer, 20, "%Y/%m/%d-%H:%M:%S", localtime(&seconds));
+
+    SDFileSystem sd(p5, p6, p7, P2_2, "sd");
+    sd.disk_initialize();
+
+    pc.printf("Hello World!\r\n");
+
+    FILE *fp = fopen("/sd/MDES/log/monitor.log", "a");
+    if (fp == NULL) {
+        pc.printf("Could not open file for write\r\n");
+    } else {
+        fprintf(fp, "%s ISO: %f, %f, %f. NEMA: %f, %f, %f\r\n", buffer, _v_x_rms, _v_y_rms, _v_z_rms, _s_x_vpp, _s_y_vpp,
+                _s_z_vpp);
+        fclose(fp);
+    }
+    pc.printf("Goodbye World!\r\n");
+
+    sd.unmount();
+}
+

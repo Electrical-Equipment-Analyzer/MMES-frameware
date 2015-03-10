@@ -12,12 +12,6 @@
 #include "state.h"
 #include "analysis.h"
 
-#include "ConfigFile.h"
-ConfigFile cfg;
-
-#include "SDFileSystem.h"
-SDFileSystem sd(p5, p6, p7, P2_2, "sd"); // the pinout on the mbed Cool Components workshop board
-
 DigitalOut led2(P0_22);
 void led2_thread(void const *args) {
     while (true) {
@@ -30,52 +24,6 @@ void ain_thread(void const *args) {
     while (true) {
 //        pc.printf("normalized: 0x%04X \r\n", ain.read_u16() >> 4);
 //        Thread::wait(500);
-    }
-}
-
-void test_sdcf() {
-
-    pc.printf("Hello World!\n");
-
-    mkdir("/sd/mydir", 0777);
-
-    FILE *fp = fopen("/sd/mydir/sdtest.txt", "w");
-    if (fp == NULL) {
-        pc.printf("Could not open file for write\n");
-    }
-    fprintf(fp, "Hello fun SD Card World!");
-    fclose(fp);
-
-    pc.printf("Goodbye World!\n");
-
-    char *key = "MyKey";
-    char value[BUFSIZ];
-    /*
-     * Read a configuration file from a mbed.
-     */
-    if (!cfg.read("/sd/output.cfg")) {
-        pc.printf("Failure to read a configuration file.\n");
-    }
-
-    /*
-     * Get a configuration value.
-     */
-    if (cfg.getValue(key, &value[0], sizeof(value))) {
-        pc.printf("'%s'='%s'\n", key, value);
-    }
-
-    /*
-     * Set a configuration value.
-     */
-    if (!cfg.setValue("MyKey", "TestValue")) {
-        pc.printf("Failure to set a value.\n");
-    }
-
-    /*
-     * Write to a file.
-     */
-    if (!cfg.write("/sd/output.cfg")) {
-        pc.printf("Failure to write a configuration file.\n");
     }
 }
 
