@@ -4,7 +4,6 @@
 #include "at45db161d.h"
 ATD45DB161D flash(&spi, P2_1);
 
-
 #include "SDFileSystem.h"
 
 #define _flash_page_adc_x 16
@@ -34,10 +33,18 @@ ATD45DB161D flash(&spi, P2_1);
 
 Acceleration::Acceleration() {
     _sps = 10000;
+    _length = 2112;
+    _channels = 3;
+    _adc_high = 3.3;
+    _adc_low = 0;
+    _adc_bit = 12;
+    _rate = 0.016;
+    strcpy(_tag, "g");
 }
 
 void Acceleration::sample() {
     uint16_t i;
+    _timestamp = time(NULL);
     Sampling sampling(A0, A1, A2);
     sampling.start(1000000.0f / _sps);
     while (!sampling.isStop()) {
@@ -203,7 +210,7 @@ void Acceleration::count() {
     flash_function(_flash_page_g_y, _flash_page_a_y, _SAMPLING_LENGTH, &math_g_a);
     flash_function(_flash_page_g_z, _flash_page_a_z, _SAMPLING_LENGTH, &math_g_a);
 
-    double dt = 1 / _sps;
+    double dt = 1.0f / _sps;
     flash_integral(_flash_page_a_x, _flash_page_v_x, _SAMPLING_LENGTH, dt);
     flash_integral(_flash_page_a_y, _flash_page_v_y, _SAMPLING_LENGTH, dt);
     flash_integral(_flash_page_a_z, _flash_page_v_z, _SAMPLING_LENGTH, dt);
@@ -224,25 +231,60 @@ void Acceleration::count() {
 }
 
 void Acceleration::log() {
-    time_t seconds = time(NULL);
-    char buffer[20];
-    strftime(buffer, 20, "%Y/%m/%d-%H:%M:%S", localtime(&seconds));
+    char time[20];
+    strftime(time, 20, "%Y/%m/%d-%H:%M:%S", localtime(&_timestamp));
 
     SDFileSystem sd(p5, p6, p7, P2_2, "sd");
     sd.disk_initialize();
-
-    pc.printf("Hello World!\r\n");
 
     FILE *fp = fopen("/sd/MDES/log/monitor.log", "a");
     if (fp == NULL) {
         pc.printf("Could not open file for write\r\n");
     } else {
-        fprintf(fp, "%s ISO: %f, %f, %f. NEMA: %f, %f, %f\r\n", buffer, _v_x_rms, _v_y_rms, _v_z_rms, _s_x_vpp, _s_y_vpp,
+        fprintf(fp, "%s ISO: %f, %f, %f NEMA: %f, %f, %f\r\n", time, _v_x_rms, _v_y_rms, _v_z_rms, _s_x_vpp, _s_y_vpp,
                 _s_z_vpp);
         fclose(fp);
     }
-    pc.printf("Goodbye World!\r\n");
 
     sd.unmount();
 }
 
+void flash_adc_file(uint16_t from, FILE *file, uint16_t length) {
+    uint16_t ps = flash.getInfo()->pageSize;
+    uint16_t offset = 0;
+    while (offset < length) {
+        uint16_t row[ps];
+        flash.readBuffer(from + (sizeof(uint16_t) * offset / ps), row, sizeof(row));
+        fwrite((const void*) &row, sizeof(uint16_t), ps, file);
+        offset += ps;
+    }
+}
+
+void Acceleration::write() {
+    char name[33];
+    strftime(name, 33, "/sd/MDES/data/%Y%m%d%H%M%S.adc", localtime(&_timestamp));
+
+    SDFileSystem sd(p5, p6, p7, P2_2, "sd");
+    sd.disk_initialize();
+
+    FILE *fp = fopen(name, "w");
+    if (fp == NULL) {
+        pc.printf("Could not open file for write\r\n");
+    } else {
+        fwrite((const void*) &_timestamp, sizeof(time_t), 1, fp);
+        fwrite((const void*) &_sps, sizeof(uint32_t), 1, fp);
+        fwrite((const void*) &_length, sizeof(uint16_t), 1, fp);
+        fwrite((const void*) &_channels, sizeof(uint8_t), 1, fp);
+        fwrite((const void*) &_adc_high, sizeof(float), 1, fp);
+        fwrite((const void*) &_adc_low, sizeof(float), 1, fp);
+        fwrite((const void*) &_adc_bit, sizeof(uint8_t), 1, fp);
+        fwrite((const void*) &_rate, sizeof(float), 1, fp);
+        fwrite((const void*) &_tag, sizeof(char), 8, fp);
+        flash_adc_file(_flash_page_adc_x, fp, _length);
+        flash_adc_file(_flash_page_adc_y, fp, _length);
+        flash_adc_file(_flash_page_adc_z, fp, _length);
+        fclose(fp);
+    }
+
+    sd.unmount();
+}

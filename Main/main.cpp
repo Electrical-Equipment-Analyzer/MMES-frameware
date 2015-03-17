@@ -27,6 +27,10 @@ void ain_thread(void const *args) {
     }
 }
 
+void test() {
+
+}
+
 int main() {
     pc.baud(115200);
 
@@ -75,10 +79,12 @@ int main() {
     menu_about.add(Selection(NULL, 1, NULL, " Version: 0.1"));
 
     // Selections to the root menu should be added last
+    FunctionPointer fun_test(&test);
     menu_root.add(Selection(NULL, 0, &menu_test, menu_test.menuID));
     menu_root.add(Selection(NULL, 1, &menu_status, menu_status.menuID));
     menu_root.add(Selection(NULL, 2, &menu_setting, menu_setting.menuID));
     menu_root.add(Selection(NULL, 3, &menu_about, menu_about.menuID));
+    menu_root.add(Selection(&fun_test, 4, NULL, "Develop Test"));
 
     // Here is the heart of the system: the navigator.
     // The navigator takes in a reference to the root, an interface, and a reference to an lcd

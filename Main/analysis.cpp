@@ -17,6 +17,7 @@ void acquire() {
     acc.sample();
     acc.count();
     acc.log();
+    acc.write();
 }
 
 void test_ISO() {
