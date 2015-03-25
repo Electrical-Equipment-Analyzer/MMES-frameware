@@ -17,6 +17,11 @@ rm -rf mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_IAR
 rm -rf mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M4
 
 hg clone http://developer.mbed.org/teams/mbed-official/code/FATFileSystem/
+
+hg clone http://developer.mbed.org/users/mbed_official/code/USBDevice/
+hg clone http://developer.mbed.org/users/mbed_official/code/EthernetInterface/
+
+hg clone http://developer.mbed.org/users/okano/code/IAP/
 hg clone http://developer.mbed.org/users/neilt6/code/SDFileSystem/
 hg clone http://developer.mbed.org/users/shintamainjp/code/ConfigFile/
 hg clone http://developer.mbed.org/users/LeoHsueh/code/flash_at45db/
