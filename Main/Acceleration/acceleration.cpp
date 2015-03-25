@@ -232,7 +232,7 @@ void Acceleration::count() {
 
 void Acceleration::log() {
     char time[20];
-    strftime(time, 20, "%Y/%m/%d-%H:%M:%S", localtime(&_timestamp));
+    strftime(time, 20, "%Y-%m-%dT%H:%M:%S", localtime(&_timestamp));
 
     SDFileSystem sd(p5, p6, p7, P2_2, "sd");
     sd.disk_initialize();
