@@ -12,23 +12,87 @@
 #include "state.h"
 #include "analysis.h"
 
-DigitalOut led2(P0_22);
+#include "USBHID.h"
+
+DigitalOut led(P0_22);
 void led2_thread(void const *args) {
     while (true) {
-        led2 = !led2;
+        led = !led;
         Thread::wait(500);
     }
 }
 
-void ain_thread(void const *args) {
+void usb_thread(void const *args) {
     while (true) {
-//        pc.printf("normalized: 0x%04X \r\n", ain.read_u16() >> 4);
-//        Thread::wait(500);
+        pc.printf("USB init...\r\n");
+        USBHID hid(8, 8, 0x1234, 0x0006, 0x0001, false);
+        HID_REPORT send_report;
+        HID_REPORT recv_report;
+        send_report.length = 8;
+
+        pc.printf("USB connecting...\r\n");
+        hid.connect(false);
+        while (!hid.configured()) {
+            pc.printf("USB waitting configure...\r\n");
+            Thread::wait(1000);
+        }
+
+        while (true) {
+            pc.printf("USB read...\r\n");
+            if (hid.read(&recv_report)) {
+                for (int i = 0; i < recv_report.length; i++) {
+                    pc.printf("%x ", recv_report.data[i]);
+                }
+                pc.printf("\r\n");
+
+
+                pc.printf("USB send...\r\n");
+                for (int i = 0; i < send_report.length; i++)
+                    send_report.data[i] = rand() & 0xff;
+
+                hid.send(&send_report);
+            }
+        }
+        hid.disconnect();
     }
 }
 
 void test() {
-
+//    USBHID hid(8, 8, 0x1234, 0x0006, 0x0001, false);
+//    HID_REPORT send_report;
+//    HID_REPORT recv_report;
+//
+//    hid.USBHAL::connect();
+//    Thread::wait(1000);
+//    if (!hid.configured()) {
+//        pc.printf("usb connect fail!!!\r\n");
+//        hid.disconnect();
+//        return;
+//    }
+//    led = 1;
+//
+//    send_report.length = 8;
+//
+//    //Fill the report
+//    for (int i = 0; i < send_report.length; i++)
+//        send_report.data[i] = rand() & 0xff;
+//
+//    pc.printf("USB receive\r\n");
+//    //Send the report
+//    hid.send(&send_report);
+//
+//    pc.printf("USB send\r\n");
+//    //try to read a msg
+//    if (hid.read(&recv_report)) {
+//        led = !led;
+//        for (int i = 0; i < recv_report.length; i++) {
+//            pc.printf("%x ", recv_report.data[i]);
+//        }
+//        pc.printf("\r\n");
+//    }
+//
+//    pc.printf("USB disconnect\r\n");
+//    hid.disconnect();
 }
 
 int main() {
@@ -47,7 +111,8 @@ int main() {
     wait(1);
 
     Thread thread_led(led2_thread);
-//    Thread thread_ain(ain_thread);
+    Thread thread_usb(usb_thread);
+
 
 //User Menu
     Menu menu_root(" Motor Detector", NULL);
