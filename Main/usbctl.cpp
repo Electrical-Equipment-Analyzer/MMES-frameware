@@ -16,14 +16,13 @@ typedef enum {
 } USB_COMMAND;
 
 Usbctl::Usbctl() : hid(8, 64, 0x1234, 0x0006, 0x0001, false) {
-
     send_report.length = 64;
     hid.connect(false);
 }
 
 
 
-void usbtest() {
+void Usbctl::log() {
     char t[100];
     SDFileSystem sd(p5, p6, p7, P2_2, "sd");
     sd.disk_initialize();
@@ -32,8 +31,13 @@ void usbtest() {
     if (fp == NULL) {
         pc.printf("Could not open file for write\r\n");
     } else {
-        fscanf(fp, "%100[^\r^\n]s", t);
-        pc.printf("%s\r\n", t);
+        while (!feof(fp)) {
+            fscanf(fp, "%99[^\r^\n]s", t);
+            fgetc(fp);
+            char c = fgetc(fp);
+            pc.printf("%s %c\r\n", t, c);
+        }
+
         fclose(fp);
     }
 
@@ -66,22 +70,20 @@ void Usbctl::usb_ad() {
 
 }
 
-void Usbctl::poll() {
-    if (hid.readNB(&recv_report)) {
-        pc.printf("USB read : ");
-        for (int i = 0; i < recv_report.length; i++) {
-            pc.printf("%x ", recv_report.data[i]);
-        }
-        pc.printf("\r\n");
+bool Usbctl::poll() {
+    bool state = false;
+    while (hid.readNB(&recv_report)) {
+        state = true;
+        lcd.cls();
+        lcd.printf("USB Mode");
 
         switch (recv_report.data[0]) {
             case LOG_LIST:
-                //                        read(&send_report.data);
-                usbtest();
+                log();
                 hid.send(&send_report);
                 break;
             case LOG_DATA:
-                //                        test();
+                wait(2);
                 hid.send(&send_report);
                 break;
             case CONTROL:
@@ -90,5 +92,6 @@ void Usbctl::poll() {
                 break;
         }
     }
+    return state;
 }
 

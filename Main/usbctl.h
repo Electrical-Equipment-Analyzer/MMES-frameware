@@ -17,12 +17,14 @@ class Usbctl {
     public:
         Usbctl();
 
-        void poll();
+        bool poll();
 
 
     private:
 
         void usb_ad();
+
+        void log();
 
         USBHID hid;
         HID_REPORT send_report;
