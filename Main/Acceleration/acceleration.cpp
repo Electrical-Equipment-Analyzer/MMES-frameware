@@ -43,18 +43,26 @@ Acceleration::Acceleration() {
 }
 
 void Acceleration::sample() {
+
+    uint16_t x[_length];
+    uint16_t y[_length];
+    uint16_t z[_length];
+
     uint16_t i;
     _timestamp = time(NULL);
     Sampling sampling(A0, A1, A2);
+    sampling.setbuf(x, y, z);
     sampling.start(1000000.0f / _sps);
     while (!sampling.isStop()) {
     }
     for (i = 2; i < 128; i++) {
         flash.BlockErase(i);
     }
-    flash.writeBuffer(_flash_page_adc_x, sampling.x, sizeof(sampling.x));
-    flash.writeBuffer(_flash_page_adc_y, sampling.y, sizeof(sampling.y));
-    flash.writeBuffer(_flash_page_adc_z, sampling.z, sizeof(sampling.z));
+    flash.writeBuffer(_flash_page_adc_x, x, sizeof(x));
+    flash.writeBuffer(_flash_page_adc_y, y, sizeof(y));
+    flash.writeBuffer(_flash_page_adc_z, z, sizeof(z));
+
+    sampling.setbuf(NULL, NULL, NULL);
 }
 
 double math_vac_g(double vac) {
@@ -74,7 +82,7 @@ void flash_adc_vdc(uint16_t from, uint16_t to, uint16_t length) {
         double d[ps];
         flash.readBuffer(from + (sizeof(uint16_t) * offset / ps), row, sizeof(row));
         for (i = 0; i < ps; i++) {
-            d[i] = row[i] * _SAMPLING_VCC / 0xFFF;
+            d[i] = row[i] * 3.3f / 0xFFF;
         }
         flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
         offset += ps;
@@ -194,45 +202,45 @@ void flash_print(uint16_t addr_x, uint16_t addr_y, uint16_t addr_z, uint16_t len
 }
 
 void Acceleration::count() {
-    flash_adc_vdc(_flash_page_adc_x, _flash_page_vdc_x, _SAMPLING_LENGTH);
-    flash_adc_vdc(_flash_page_adc_y, _flash_page_vdc_y, _SAMPLING_LENGTH);
-    flash_adc_vdc(_flash_page_adc_z, _flash_page_vdc_z, _SAMPLING_LENGTH);
+    flash_adc_vdc(_flash_page_adc_x, _flash_page_vdc_x, _length);
+    flash_adc_vdc(_flash_page_adc_y, _flash_page_vdc_y, _length);
+    flash_adc_vdc(_flash_page_adc_z, _flash_page_vdc_z, _length);
 
-    flash_vdc_vac(_flash_page_vdc_x, _flash_page_vac_x, _SAMPLING_LENGTH);
-    flash_vdc_vac(_flash_page_vdc_y, _flash_page_vac_y, _SAMPLING_LENGTH);
-    flash_vdc_vac(_flash_page_vdc_z, _flash_page_vac_z, _SAMPLING_LENGTH);
+    flash_vdc_vac(_flash_page_vdc_x, _flash_page_vac_x, _length);
+    flash_vdc_vac(_flash_page_vdc_y, _flash_page_vac_y, _length);
+    flash_vdc_vac(_flash_page_vdc_z, _flash_page_vac_z, _length);
 
-    flash_function(_flash_page_vac_x, _flash_page_g_x, _SAMPLING_LENGTH, &math_vac_g);
-    flash_function(_flash_page_vac_y, _flash_page_g_y, _SAMPLING_LENGTH, &math_vac_g);
-    flash_function(_flash_page_vac_z, _flash_page_g_z, _SAMPLING_LENGTH, &math_vac_g);
+    flash_function(_flash_page_vac_x, _flash_page_g_x, _length, &math_vac_g);
+    flash_function(_flash_page_vac_y, _flash_page_g_y, _length, &math_vac_g);
+    flash_function(_flash_page_vac_z, _flash_page_g_z, _length, &math_vac_g);
 
-    flash_function(_flash_page_g_x, _flash_page_a_x, _SAMPLING_LENGTH, &math_g_a);
-    flash_function(_flash_page_g_y, _flash_page_a_y, _SAMPLING_LENGTH, &math_g_a);
-    flash_function(_flash_page_g_z, _flash_page_a_z, _SAMPLING_LENGTH, &math_g_a);
+    flash_function(_flash_page_g_x, _flash_page_a_x, _length, &math_g_a);
+    flash_function(_flash_page_g_y, _flash_page_a_y, _length, &math_g_a);
+    flash_function(_flash_page_g_z, _flash_page_a_z, _length, &math_g_a);
 
     double dt = 1.0f / _sps;
-    flash_integral(_flash_page_a_x, _flash_page_v_x, _SAMPLING_LENGTH, dt);
-    flash_integral(_flash_page_a_y, _flash_page_v_y, _SAMPLING_LENGTH, dt);
-    flash_integral(_flash_page_a_z, _flash_page_v_z, _SAMPLING_LENGTH, dt);
+    flash_integral(_flash_page_a_x, _flash_page_v_x, _length, dt);
+    flash_integral(_flash_page_a_y, _flash_page_v_y, _length, dt);
+    flash_integral(_flash_page_a_z, _flash_page_v_z, _length, dt);
 
-    flash_integral(_flash_page_v_x, _flash_page_s_x, _SAMPLING_LENGTH, dt);
-    flash_integral(_flash_page_v_y, _flash_page_s_y, _SAMPLING_LENGTH, dt);
-    flash_integral(_flash_page_v_z, _flash_page_s_z, _SAMPLING_LENGTH, dt);
+    flash_integral(_flash_page_v_x, _flash_page_s_x, _length, dt);
+    flash_integral(_flash_page_v_y, _flash_page_s_y, _length, dt);
+    flash_integral(_flash_page_v_z, _flash_page_s_z, _length, dt);
 
-    _v_x_rms = flash_rms(_flash_page_v_x, _SAMPLING_LENGTH);
-    _v_y_rms = flash_rms(_flash_page_v_y, _SAMPLING_LENGTH);
-    _v_z_rms = flash_rms(_flash_page_v_z, _SAMPLING_LENGTH);
+    _v_x_rms = flash_rms(_flash_page_v_x, _length);
+    _v_y_rms = flash_rms(_flash_page_v_y, _length);
+    _v_z_rms = flash_rms(_flash_page_v_z, _length);
 
-    _s_x_vpp = flash_vpp(_flash_page_s_x, _SAMPLING_LENGTH);
-    _s_y_vpp = flash_vpp(_flash_page_s_y, _SAMPLING_LENGTH);
-    _s_z_vpp = flash_vpp(_flash_page_s_z, _SAMPLING_LENGTH);
+    _s_x_vpp = flash_vpp(_flash_page_s_x, _length);
+    _s_y_vpp = flash_vpp(_flash_page_s_y, _length);
+    _s_z_vpp = flash_vpp(_flash_page_s_z, _length);
 
-    flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _SAMPLING_LENGTH);
+    flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _length);
 }
 
 void Acceleration::log() {
-    char time[20];
-    strftime(time, 20, "%Y-%m-%dT%H:%M:%S", localtime(&_timestamp));
+    char time[26];
+    strftime(time, 26, "%Y-%m-%dT%H:%M:%S+08:00", localtime(&_timestamp));
 
     SDFileSystem sd(p5, p6, p7, P2_2, "sd");
     sd.disk_initialize();
