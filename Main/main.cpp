@@ -12,7 +12,31 @@
 #include "state.h"
 #include "analysis.h"
 
-#include "USBHID.h"
+//#include "USBHID.h"
+#include "SDFileSystem.h"
+
+#include "usbctl.h"
+
+void test() {
+    char t[100];
+//    time_t _timestamp = time(NULL);
+//    strftime(t, 20, "%Y-%m-%dT%H:%M:%S", localtime(&_timestamp));
+
+    SDFileSystem sd(p5, p6, p7, P2_2, "sd");
+    sd.disk_initialize();
+
+    FILE *fp = fopen("/sd/MDES/log/monitor.log", "r");
+    if (fp == NULL) {
+        pc.printf("Could not open file for write\r\n");
+    } else {
+//        getline(fp->, t);
+        fscanf(fp, "%100[^\r^\n]s", t);
+        pc.printf("%s\r\n", t);
+        fclose(fp);
+    }
+
+    sd.unmount();
+}
 
 DigitalOut led(P0_22);
 void led2_thread(void const *args) {
@@ -22,78 +46,89 @@ void led2_thread(void const *args) {
     }
 }
 
-void usb_thread(void const *args) {
-    while (true) {
-        pc.printf("USB init...\r\n");
-        USBHID hid(8, 8, 0x1234, 0x0006, 0x0001, false);
-        HID_REPORT send_report;
-        HID_REPORT recv_report;
-        send_report.length = 8;
-
-        pc.printf("USB connecting...\r\n");
-        hid.connect(false);
-        while (!hid.configured()) {
-            pc.printf("USB waitting configure...\r\n");
-            Thread::wait(1000);
-        }
-
-        while (true) {
-            pc.printf("USB read...\r\n");
-            if (hid.read(&recv_report)) {
-                for (int i = 0; i < recv_report.length; i++) {
-                    pc.printf("%x ", recv_report.data[i]);
-                }
-                pc.printf("\r\n");
+//typedef enum {
+//    LOG_LIST, LOG_DATA, CONTROL
+//} USB_COMMAND;
 
 
-                pc.printf("USB send...\r\n");
-                for (int i = 0; i < send_report.length; i++)
-                    send_report.data[i] = rand() & 0xff;
-
-                hid.send(&send_report);
-            }
-        }
-        hid.disconnect();
-    }
-}
-
-void test() {
-//    USBHID hid(8, 8, 0x1234, 0x0006, 0x0001, false);
-//    HID_REPORT send_report;
-//    HID_REPORT recv_report;
-//
-//    hid.USBHAL::connect();
-//    Thread::wait(1000);
-//    if (!hid.configured()) {
-//        pc.printf("usb connect fail!!!\r\n");
-//        hid.disconnect();
-//        return;
-//    }
-//    led = 1;
-//
-//    send_report.length = 8;
-//
-//    //Fill the report
-//    for (int i = 0; i < send_report.length; i++)
-//        send_report.data[i] = rand() & 0xff;
-//
-//    pc.printf("USB receive\r\n");
-//    //Send the report
-//    hid.send(&send_report);
-//
-//    pc.printf("USB send\r\n");
-//    //try to read a msg
-//    if (hid.read(&recv_report)) {
-//        led = !led;
-//        for (int i = 0; i < recv_report.length; i++) {
-//            pc.printf("%x ", recv_report.data[i]);
+DigitalIn usb_en(P1_31);
+//void usb_thread(void const *args) {
+//    while (true) {
+//        while (usb_en != 0) {
+//            Thread::wait(1000);
 //        }
-//        pc.printf("\r\n");
+//        pc.printf("USB init...\r\n");
+//        USBHID hid(8, 8, 0x1234, 0x0006, 0x0001, false);
+//        HID_REPORT send_report;
+//        HID_REPORT recv_report;
+//        send_report.length = 8;
+//
+//        pc.printf("USB connecting...\r\n");
+//        hid.connect(false);
+//
+//        while (usb_en != 0) {
+//            pc.printf("USB read...\r\n");
+//            if (hid.read(&recv_report)) {
+//                for (int i = 0; i < recv_report.length; i++) {
+//                    pc.printf("%x ", recv_report.data[i]);
+//                }
+//                pc.printf("\r\n");
+//
+//                switch (recv_report.data[0]) {
+//                    case LOG_LIST:
+////                        read(&send_report.data);
+//                        test();
+//                        hid.send(&send_report);
+//                        break;
+//                    case LOG_DATA:
+////                        test();
+//                        hid.send(&send_report);
+//                        break;
+//                    case CONTROL:
+//                        pc.printf("USB send...\r\n");
+//                        for (int i = 0; i < send_report.length; i++)
+//                            send_report.data[i] = rand() & 0xff;
+//                        hid.send(&send_report);
+//                        break;
+//                }
+//                continue;
+//            }
+//            Thread::wait(5000);
+//        }
+//        hid.disconnect();
+//    }
+//}
+
+//#include "Sampling.h"
+
+//USBHID hid(8, 64, 0x1234, 0x0006, 0x0001, false);
+//HID_REPORT send_report;
+//HID_REPORT recv_report;
+
+//void usb_ad() {
+//    uint8_t length = 10;
+//
+//    uint16_t x[length];
+//    uint16_t y[length];
+//    uint16_t z[length];
+//
+//    Sampling sampling(A0, A1, A2, 10);
+//    sampling.setbuf(x, y, z);
+//
+//    while (true) {
+//        if (hid.readNB(&recv_report)) {
+//            if (recv_report.data[0] != CONTROL) {
+//                break;
+//            }
+//            while (!sampling.isStop()) {
+//            }
+//            memcpy(send_report.data, &x, sizeof(x));
+//            sampling.start(1000000.0f / 10000);
+//            hid.send(&send_report);
+//        }
 //    }
 //
-//    pc.printf("USB disconnect\r\n");
-//    hid.disconnect();
-}
+//}
 
 int main() {
     pc.baud(115200);
@@ -110,11 +145,16 @@ int main() {
     lcd.printf(" Motor Detector");
     wait(1);
 
-    Thread thread_led(led2_thread);
-    Thread thread_usb(usb_thread);
+    Thread thread_led(led2_thread, NULL, osPriorityNormal, (DEFAULT_STACK_SIZE / 16));
+//    Thread thread_usb(usb_thread, NULL, osPriorityNormal, (DEFAULT_STACK_SIZE * 2.25));
 
+//    send_report.length = 64;
 
-//User Menu
+//    pc.printf("USB connecting...\r\n");
+//    hid.connect(false);
+    Usbctl usb;
+
+    //User Menu
     Menu menu_root(" Motor Detector", NULL);
 
     FunctionPointer fun_iso(&test_ISO);
@@ -165,6 +205,31 @@ int main() {
     joystick.functions(&fun_none, &fun_up, &fun_down, &fun_back, &fun_enter, &fun_home);
 
     while (true) {
+//        if (hid.readNB(&recv_report)) {
+//            pc.printf("USB read : ");
+//            for (int i = 0; i < recv_report.length; i++) {
+//                pc.printf("%x ", recv_report.data[i]);
+//            }
+//            pc.printf("\r\n");
+//
+//            switch (recv_report.data[0]) {
+//                case LOG_LIST:
+//                    //                        read(&send_report.data);
+//                    test();
+//                    hid.send(&send_report);
+//                    break;
+//                case LOG_DATA:
+//                    //                        test();
+//                    hid.send(&send_report);
+//                    break;
+//                case CONTROL:
+//                    usb_ad();
+//                    hid.send(&send_report);
+//                    break;
+//            }
+//            continue;
+//        }
+        usb.poll();
         joystick.poll();
     }
 }
