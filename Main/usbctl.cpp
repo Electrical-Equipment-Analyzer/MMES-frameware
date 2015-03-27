@@ -23,14 +23,15 @@ Usbctl::Usbctl() :
 
 #define USB_PACKET_DATA 60
 
-void Usbctl::send(char *send, uint8_t length) {
+void Usbctl::send(void *send, uint16_t length) {
+    uint8_t *buf = reinterpret_cast<uint8_t*>(send);
     while (length > 0) {
-        uint8_t sendLength = USB_PACKET_DATA < length ? USB_PACKET_DATA : length;
+        uint16_t sendLength = USB_PACKET_DATA < length ? USB_PACKET_DATA : length;
         memset(send_report.data, 0, send_report.length);
-        memcpy(&send_report.data[4], send, sendLength);
+        memcpy(&send_report.data[4], buf, sendLength);
         length -= sendLength;
-        send += sendLength;
-        send_report.data[0] = 1;
+        buf += sendLength;
+        send_report.data[0] = length > 0 ? 1 : 3;
         send_report.data[1] = sendLength;
         hid.send(&send_report);
     }
@@ -108,25 +109,28 @@ void Usbctl::log() {
 }
 
 void Usbctl::usb_ad() {
-    uint8_t length = 10;
+    uint16_t length = 1200;
 
     uint16_t x[length];
     uint16_t y[length];
     uint16_t z[length];
 
-    Sampling sampling(A0, A1, A2, 10);
+    Sampling sampling(A0, A1, A2, length);
     sampling.setbuf(x, y, z);
 
     while (true) {
-        if (hid.readNB(&recv_report)) {
-            if (recv_report.data[0] != CONTROL) {
+        if (hid.read(&recv_report)) {
+            if (recv_report.data[1] == 0) {
                 break;
             }
+            sampling.start(1000000.0f / 10000);
             while (!sampling.isStop()) {
             }
-            memcpy(send_report.data, &x, sizeof(x));
-            sampling.start(1000000.0f / 10000);
-            hid.send(&send_report);
+            send(x, sizeof(x));
+            send(y, sizeof(y));
+            send(z, sizeof(z));
+//            memcpy(send_report.data, &x, sizeof(x));
+//            hid.send(&send_report);
         }
     }
 
@@ -151,7 +155,6 @@ bool Usbctl::poll() {
                 break;
             case CONTROL:
                 usb_ad();
-                hid.send(&send_report);
                 break;
         }
     }

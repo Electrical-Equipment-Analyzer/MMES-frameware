@@ -22,7 +22,7 @@ class Usbctl {
 
     private:
 
-        void send(char *send, uint8_t length);
+        void send(void *send, uint16_t length);
 
         void usb_ad();
 
