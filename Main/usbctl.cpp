@@ -30,7 +30,7 @@ void Usbctl::send(char *send, uint8_t length) {
         memcpy(&send_report.data[4], send, sendLength);
         length -= sendLength;
         send += sendLength;
-        send_report.data[0] = length > 0 ? 2 : 1;
+        send_report.data[0] = 1;
         send_report.data[1] = sendLength;
         hid.send(&send_report);
     }
@@ -57,6 +57,9 @@ void Usbctl::log() {
                     if (r == 0) {
                         fgetc(fp);
                         fgetc(fp);
+                        memset(send_report.data, 0, send_report.length);
+                        send_report.data[0] = 2;
+                        hid.send(&send_report);
                         continue;
                     }
                     send(t, strlen(t));
