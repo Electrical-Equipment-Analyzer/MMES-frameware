@@ -13,7 +13,30 @@
 #include "analysis.h"
 #include "usbctl.h"
 
+#include "config.h"
+
+
+I2C iic(P0_19, P0_20);
+Config conf(&iic);
+
+//#define EEPROMAddress  0xa0
+
+
 void test() {
+
+    uint16_t t = conf.get(Config::TIMEZONE);
+
+    pc.printf("Timezone %d\r\n", t);
+
+    conf.set(Config::TIMEZONE, ++t);
+
+
+
+    uint16_t m = conf.get(Config::MOTOR);
+
+    pc.printf("Motor %d\r\n", m);
+
+    conf.set(Config::MOTOR, ++m);
 }
 
 DigitalOut led(P0_22);
