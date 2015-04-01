@@ -16,6 +16,7 @@ Acceleration acc;
 void acquire() {
     acc.sample();
     acc.count();
+    acc.check();
     acc.log();
     acc.write();
 }

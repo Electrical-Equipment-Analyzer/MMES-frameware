@@ -235,7 +235,39 @@ void Acceleration::count() {
     _s_y_vpp = flash_vpp(_flash_page_s_y, _length);
     _s_z_vpp = flash_vpp(_flash_page_s_z, _length);
 
-    flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _length);
+//    flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _length);
+}
+
+static const float ISO_10816[4][3] = {{0.71, 1.8, 4.5}, {1.12, 2.8, 7.1}, {1.8, 4.5, 11.2}, {2.8, 7.1, 18.0}};
+static const float NEMA_MG1[2][3][2] = {{{18, 70}, {0, 90}}, {{18, 50}, {12, 70}, {0, 76}}};
+
+void Acceleration::check() {
+    uint8_t v_state;
+    uint8_t s_state;
+    double v_max = _v_x_rms;
+    v_max = (v_max < _v_y_rms ? _v_y_rms : v_max);
+    v_max = (v_max < _v_z_rms ? _v_z_rms : v_max);
+    v_max *= 1000;
+    double s_max = _s_x_vpp;
+    s_max = (s_max < _s_y_vpp ? _s_y_vpp : s_max);
+    s_max = (s_max < _s_z_vpp ? _s_z_vpp : s_max);
+    s_max *= 1000000;
+    uint8_t type = conf.get(Config::MOTOR_TYPE);
+    for (v_state = 0; v_state < 4; v_state++) {
+        if (v_max <= ISO_10816[type][v_state]) {
+            break;
+        }
+    }
+    uint8_t spec = conf.get(Config::MOTOR_SPEC);
+    uint8_t rpms = conf.get(Config::MOTOR_RPMS);
+    uint8_t i;
+    for (i = 0; i < 3; i++) {
+        if (rpms > NEMA_MG1[spec][i][0]) {
+            break;
+        }
+    }
+    s_state = s_max > NEMA_MG1[spec][i][1];
+    pc.printf("state %d, %d\r\n", v_state, s_state);
 }
 
 void Acceleration::log() {

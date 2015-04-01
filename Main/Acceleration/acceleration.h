@@ -36,6 +36,9 @@ class Acceleration {
 
         void count();
         
+
+        void check();
+
         void log();
 
         void write();
