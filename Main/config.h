@@ -19,8 +19,10 @@ class Config {
 
         typedef enum {
             TIMEZONE = 0x00,
-            MOTOR = 0x10,
-            TASK = 0x11
+            MOTOR_TYPE = 0x10,
+            MOTOR_SPEC = 0x11,
+            MOTOR_RPMS = 0x12,
+            TASK = 0x15
         } CONFIG_TYPE;
 
         Config(I2C *i2c);

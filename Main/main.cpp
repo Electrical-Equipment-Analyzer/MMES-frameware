@@ -13,30 +13,8 @@
 #include "analysis.h"
 #include "usbctl.h"
 
-#include "config.h"
-
-
-I2C iic(P0_19, P0_20);
-Config conf(&iic);
-
-//#define EEPROMAddress  0xa0
-
 
 void test() {
-
-    uint16_t t = conf.get(Config::TIMEZONE);
-
-    pc.printf("Timezone %d\r\n", t);
-
-    conf.set(Config::TIMEZONE, ++t);
-
-
-
-    uint16_t m = conf.get(Config::MOTOR);
-
-    pc.printf("Motor %d\r\n", m);
-
-    conf.set(Config::MOTOR, ++m);
 }
 
 DigitalOut led(P0_22);
@@ -52,7 +30,7 @@ int main() {
 
     pc.printf("Booting...\r\n");
 
-    State state(&lcd, &joystick);
+    State state(&lcd, &joystick, &conf);
 
     lcd.setPower(true);
     lcd.cls();
@@ -83,13 +61,23 @@ int main() {
     menu_status.add(Selection(NULL, 0, NULL, " OK"));
     menu_status.add(Selection(NULL, 1, NULL, " XYZ"));
 
-    FunctionPointer fun_sd(&state, &State::setting_date);
+    FunctionPointer fun_set_date(&state, &State::setting_date);
+    FunctionPointer fun_set_tmze(&state, &State::setting_timezone);
+    FunctionPointer fun_set_motor_t(&state, &State::setting_motor_type);
+    FunctionPointer fun_set_motor_s(&state, &State::setting_motor_spec);
+    FunctionPointer fun_set_motor_r(&state, &State::setting_motor_rpms);
+    FunctionPointer fun_set_task(&state, &State::setting_task);
     //Menu - Setting
     Menu menu_setting(" Setting", &menu_root);
-    menu_setting.add(Selection(NULL, 0, NULL, " inch/mm"));
-    menu_setting.add(Selection(NULL, 1, NULL, " USB"));
-    menu_setting.add(Selection(NULL, 2, NULL, " Network"));
-    menu_setting.add(Selection(&fun_sd, 3, NULL, "Date/Time"));
+    menu_setting.add(Selection(&fun_set_date, 0, NULL, "Date & Time"));
+    menu_setting.add(Selection(&fun_set_tmze, 1, NULL, "Time Zone"));
+    menu_setting.add(Selection(&fun_set_motor_t, 2, NULL, "Motor Type"));
+    menu_setting.add(Selection(&fun_set_motor_s, 3, NULL, "Motor Spec"));
+    menu_setting.add(Selection(&fun_set_motor_r, 4, NULL, "Motor rpms"));
+    menu_setting.add(Selection(&fun_set_task, 5, NULL, "Task"));
+    menu_setting.add(Selection(NULL, 6, NULL, " inch/mm"));
+    menu_setting.add(Selection(NULL, 7, NULL, " USB"));
+    menu_setting.add(Selection(NULL, 8, NULL, " Network"));
 
     //Menu - About
     Menu menu_about(" About", &menu_root);

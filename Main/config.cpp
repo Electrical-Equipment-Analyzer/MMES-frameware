@@ -37,7 +37,10 @@ void Config::set(CONFIG_TYPE type, uint16_t conf) {
         case TIMEZONE:
             write(type, conf, 2);
             break;
-        case MOTOR:
+        case MOTOR_TYPE:
+        case MOTOR_SPEC:
+        case MOTOR_RPMS:
+        case TASK:
             write(type, conf, 1);
             break;
     }
@@ -48,7 +51,10 @@ uint16_t Config::get(CONFIG_TYPE type) {
         case TIMEZONE:
             return read(type, 2);
             break;
-        case MOTOR:
+        case MOTOR_TYPE:
+        case MOTOR_SPEC:
+        case MOTOR_RPMS:
+        case TASK:
             return read(type, 1);
             break;
     }
