@@ -8,9 +8,9 @@
 #ifndef ANALYSIS_H_
 #define ANALYSIS_H_
 
-
-
 #include <math.h>
+
+void acquire();
 
 void test_ISO();
 void test_NEMA();

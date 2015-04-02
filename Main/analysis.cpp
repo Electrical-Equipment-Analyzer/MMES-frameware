@@ -14,11 +14,15 @@
 Acceleration acc;
 
 void acquire() {
+    lcd.cls();
+    lcd.printf("acquiring\n");
     acc.sample();
     acc.count();
     acc.check();
     acc.log();
     acc.write();
+    lcd.printf("%.2f %.2f %.2f", acc._v_x_rms * 1000, acc._v_y_rms * 1000, acc._v_z_rms * 1000);
+    wait(2);
 }
 
 void test_ISO() {

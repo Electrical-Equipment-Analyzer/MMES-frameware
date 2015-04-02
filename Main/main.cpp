@@ -16,6 +16,7 @@
 void test() {
 }
 
+uint8_t led_state;
 
 DigitalOut led(P0_22);
 DigitalOut led_b(P0_26);
@@ -24,16 +25,16 @@ DigitalOut led_g(P2_1);
 void led2_thread(void const *args) {
     while (true) {
         Thread::wait(500);
-        uint8_t state = conf.get(Config::STATE);
+
         led = !led;
 
         led_r = 0;
         led_g = 0;
         led_b = 0;
-        if (led && (state & 0x80)) {
+        if (led && (led_state & 0x80)) {
             continue;
         }
-        switch (state & 0xF) {
+        switch (led_state & 0xF) {
             case 0:
                 led_g = 1;
                 break;
@@ -52,6 +53,8 @@ void led2_thread(void const *args) {
     }
 }
 
+uint8_t minute;
+
 int main() {
     pc.baud(115200);
 
@@ -62,7 +65,7 @@ int main() {
     lcd.setPower(true);
     lcd.cls();
     lcd.setAddress(0, 0);
-    lcd.printf("Taiwan Tech  UNI");
+    lcd.printf("Taiwan Tech");
     lcd.setAddress(0, 1);
     lcd.printf(" Motor Detector");
     wait(1);
@@ -133,6 +136,15 @@ int main() {
     joystick.functions(&fun_none, &fun_up, &fun_down, &fun_back, &fun_enter, &fun_home);
 
     while (true) {
+        led_state = conf.get(Config::STATE);
+        uint8_t task = conf.get(Config::TASK);
+        time_t tt = time(NULL);
+        struct tm *t  = localtime(&tt);
+        if (task != 0 && (t->tm_min % task == 0) && t->tm_min != minute) {
+            minute = t->tm_min;
+            acquire();
+            navigator.printMenu();
+        }
         if (usb.poll()) {
             navigator.printMenu();
         }
