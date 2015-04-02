@@ -253,7 +253,7 @@ void Acceleration::check() {
     s_max = (s_max < _s_z_vpp ? _s_z_vpp : s_max);
     s_max *= 1000000;
     uint8_t type = conf.get(Config::MOTOR_TYPE);
-    for (v_state = 0; v_state < 4; v_state++) {
+    for (v_state = 0; v_state < 3; v_state++) {
         if (v_max <= ISO_10816[type][v_state]) {
             break;
         }
@@ -268,6 +268,9 @@ void Acceleration::check() {
     }
     s_state = s_max > NEMA_MG1[spec][i][1];
     pc.printf("state %d, %d\r\n", v_state, s_state);
+    conf.set(Config::STATE, (s_state << 7) | v_state);
+//    led_state[0] = (s_state << 7) | v_state;
+//    led_state[0]++;
 }
 
 void Acceleration::log() {

@@ -22,7 +22,8 @@ class Config {
             MOTOR_TYPE = 0x10,
             MOTOR_SPEC = 0x11,
             MOTOR_RPMS = 0x12,
-            TASK = 0x15
+            TASK = 0x15,
+            STATE = 16
         } CONFIG_TYPE;
 
         Config(I2C *i2c);
