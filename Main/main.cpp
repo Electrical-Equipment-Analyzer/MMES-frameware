@@ -22,34 +22,29 @@ DigitalOut led(P0_22);
 DigitalOut led_b(P0_26);
 DigitalOut led_r(P2_0);
 DigitalOut led_g(P2_1);
-void led2_thread(void const *args) {
-    while (true) {
-        Thread::wait(500);
-
-        led = !led;
-
-        led_r = 0;
-        led_g = 0;
-        led_b = 0;
-        if (led && (led_state & 0x80)) {
-            continue;
-        }
-        switch (led_state & 0xF) {
-            case 0:
-                led_g = 1;
-                break;
-            case 1:
-                led_g = 1;
-                led_r = 1;
-                break;
-            case 2:
-                led_r = 1;
-                led_b = 1;
-                break;
-            case 3:
-                led_r = 1;
-                break;
-        }
+void led2_thread() {
+    led = !led;
+    led_r = 0;
+    led_g = 0;
+    led_b = 0;
+    if (led && (led_state & 0x80)) {
+        return;
+    }
+    switch (led_state & 0xF) {
+        case 0:
+            led_g = 1;
+            break;
+        case 1:
+            led_g = 1;
+            led_r = 1;
+            break;
+        case 2:
+            led_r = 1;
+            led_b = 1;
+            break;
+        case 3:
+            led_r = 1;
+            break;
     }
 }
 
@@ -70,8 +65,8 @@ int main() {
     lcd.printf(" Motor Detector");
     wait(1);
 
-    Thread thread_led(led2_thread, NULL, osPriorityNormal, (DEFAULT_STACK_SIZE));
-//    Thread thread_usb(usb_thread, NULL, osPriorityNormal, (DEFAULT_STACK_SIZE * 2.25));
+    Ticker led;
+    led.attach(led2_thread, 0.5);
 
     Usbctl usb;
 
