@@ -274,8 +274,14 @@ void Acceleration::check() {
 }
 
 void Acceleration::log() {
-    char time[26];
-    strftime(time, 26, "%Y-%m-%dT%H:%M:%S+08:00", localtime(&_timestamp));
+    int16_t timezone = conf.get(Config::TIMEZONE);
+    uint8_t minute = abs(timezone % 60);
+    uint8_t hour = abs(timezone / 60);
+    char zone[7];
+    sprintf(zone, "%c%02d:%02d", (timezone < 0 ? '-' : '+'), hour, minute);
+    time_t timestamp = _timestamp + (timezone*60);
+    char time[20];
+    strftime(time, 20, "%Y-%m-%dT%H:%M:%S", localtime(&timestamp));
 
     SDFileSystem sd(p5, p6, p7, P2_2, "sd");
     sd.disk_initialize();
@@ -284,7 +290,7 @@ void Acceleration::log() {
     if (fp == NULL) {
         pc.printf("Could not open file for write\r\n");
     } else {
-        fprintf(fp, "%s ISO: %f, %f, %f NEMA: %f, %f, %f\r\n", time, _v_x_rms, _v_y_rms, _v_z_rms, _s_x_vpp, _s_y_vpp,
+        fprintf(fp, "%s%s ISO: %f, %f, %f NEMA: %f, %f, %f\r\n", time, zone, _v_x_rms, _v_y_rms, _v_z_rms, _s_x_vpp, _s_y_vpp,
                 _s_z_vpp);
         fclose(fp);
     }
@@ -304,8 +310,10 @@ void flash_adc_file(uint16_t from, FILE *file, uint16_t length) {
 }
 
 void Acceleration::write() {
+    int16_t timezone = conf.get(Config::TIMEZONE);
+    time_t timestamp = _timestamp + (timezone*60);
     char name[33];
-    strftime(name, 33, "/sd/MDES/data/%Y%m%d%H%M%S.adc", localtime(&_timestamp));
+    strftime(name, 33, "/sd/MDES/data/%Y%m%d%H%M%S.adc", localtime(&timestamp));
 
     SDFileSystem sd(p5, p6, p7, P2_2, "sd");
     sd.disk_initialize();

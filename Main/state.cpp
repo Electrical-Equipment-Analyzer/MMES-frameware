@@ -8,7 +8,6 @@
 #include "state.h"
 
 #include "mbed.h"
-#include "rtos.h"
 
 State::State(TextLCD *lcd, Joystick *joystick, Config *conf) :
         _lcd(lcd), _joystick(joystick), _conf(conf) {
@@ -20,7 +19,8 @@ static const uint8_t dt[][2] = { { 0, 5 }, { 0, 6 }, { 0, 7 }, { 0, 8 }, { 0, 10
 uint8_t c = 0;
 
 void State::date() {
-    time_t seconds = time(NULL);
+    int32_t timezone = _conf->get(Config::TIMEZONE) * 60;
+    time_t seconds = time(NULL) + timezone;
     char buffer[32];
     strftime(buffer, 32, "Date:%Y/%m/%d\nTime: %H:%M:%S", localtime(&seconds));
     _lcd->cls();
@@ -122,39 +122,39 @@ void State::setting_date() {
 static const uint8_t tz[] = { 11, 12, 14, 15 };
 
 void State::print_timezone() {
-    time_t seconds = _conf->get(Config::TIMEZONE) * 60;
-    char buffer[32];
-    strftime(buffer, 32, "Time Zone: %H:%M", localtime(&seconds));
+    int16_t timezone = _conf->get(Config::TIMEZONE);
+    uint8_t minute = abs(timezone % 60);
+    uint8_t hour = abs(timezone / 60);
     _lcd->cls();
-    _lcd->printf("%s", buffer);
+    _lcd->printf("Time Zone:%c%02d:%02d", (timezone < 0 ? '-' : '+'), hour, minute);
     _lcd->setAddress(tz[c], 0);
 }
 
 void State::config_timezone(int dir) {
-    time_t seconds = _conf->get(Config::TIMEZONE) * 60;
-    struct tm *t = localtime(&seconds);
+    int16_t timezone = _conf->get(Config::TIMEZONE);
     switch (c) {
         case 0:
-            t->tm_hour += dir * 10;
+            timezone += dir * 600;
             break;
         case 1:
-            t->tm_hour += dir;
+            timezone += dir * 60;
             break;
         case 2:
-            t->tm_min += dir * 10;
+            timezone += dir * 10;
             break;
         case 3:
-            t->tm_min += dir;
+            timezone += dir;
             break;
     }
-    _conf->set(Config::TIMEZONE, mktime(t) / 60);
+    timezone %= 720;
+    _conf->set(Config::TIMEZONE, timezone);
 }
 
 void State::setting_timezone() {
     Ticker flipper;
     flipper.attach(this, &State::print_timezone, 1);
     Joystick::Status last_status = Joystick::right;
-    _lcd->setCursor(TextLCD::CurOn_BlkOn);
+    _lcd->setCursor(TextLCD::CurOff_BlkOn);
     while (true) {
         Joystick::Status status = _joystick->getStatus();
         if (status != last_status) {
@@ -204,7 +204,7 @@ void State::config_motor_type(int dir) {
     uint8_t type = _conf->get(Config::MOTOR_TYPE);
     type += dir;
     if (type >= 4) {
-        return;
+        type = 0;
     }
     _conf->set(Config::MOTOR_TYPE, type);
 }
@@ -239,7 +239,7 @@ void State::setting_motor_type() {
     }
 }
 
-static const char motor_spec[][17] = { "Stand Machines", "Special Machines"};
+static const char motor_spec[][17] = { "Stand Machines", "Special Machines" };
 
 void State::print_motor_spec() {
     uint8_t type = _conf->get(Config::MOTOR_SPEC);
@@ -287,7 +287,7 @@ void State::setting_motor_spec() {
     }
 }
 
-static const char motor_rpms[] = {2, 3};
+static const char motor_rpms[] = { 2, 3 };
 
 void State::print_motor_rpms() {
     uint8_t type = _conf->get(Config::MOTOR_RPMS);
