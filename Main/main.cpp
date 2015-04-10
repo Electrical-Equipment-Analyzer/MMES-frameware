@@ -13,7 +13,48 @@
 #include "analysis.h"
 #include "usbctl.h"
 
+#include "EthernetInterface.h"
+
+extern "C" void mbed_mac_address(char *mac) {
+    mac[0] = 0x00;
+    mac[1] = 0x02;
+    mac[2] = 0xF7;
+    mac[3] = 0xF1;
+    mac[4] = 0x91;
+    mac[5] = 0x9F;
+}
+
 void test() {
+    EthernetInterface eth;
+    if (eth.getIPAddress()[0] == '\0') {
+        eth.init();
+    }
+    eth.connect();
+    pc.printf("IP Address is %s\r\n", eth.getIPAddress());
+
+    mem();
+
+    TCPSocketConnection sock;
+    sock.connect("mbed.org", 80);
+
+    char http_cmd[] = "GET /media/uploads/mbed_official/hello.txt HTTP/1.0\n\n";
+    sock.send_all(http_cmd, sizeof(http_cmd) - 1);
+
+    char buffer[100];
+    int ret;
+
+    pc.printf("Received from server:\r\n");
+    while (true) {
+        ret = sock.receive(buffer, sizeof(buffer) - 1);
+        if (ret <= 0) break;
+        buffer[ret] = '\0';
+        pc.printf("%s", buffer);
+    }
+    pc.printf("====================\r\n");
+
+    sock.close();
+
+    eth.disconnect();
 }
 
 uint8_t led_state;
