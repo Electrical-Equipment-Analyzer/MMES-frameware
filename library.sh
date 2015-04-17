@@ -1,8 +1,12 @@
 #!/bin/bash
 
+MBED_URL=http://developer.mbed.org
+
 hg clone http://developer.mbed.org/users/mbed_official/code/mbed/
 ls -d mbed/* |grep TARGET |grep -v 1768 |xargs rm -rf
 ls -d mbed/TARGET*/* |grep TOOLCHAIN |grep -v GCC_CR |xargs rm -rf
+
+patch -p0 < ld.patch
 
 rm -rf Library
 mkdir Library
@@ -19,7 +23,16 @@ rm -rf mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M4
 hg clone http://developer.mbed.org/teams/mbed-official/code/FATFileSystem/
 
 hg clone http://developer.mbed.org/users/mbed_official/code/USBDevice/
+ls -d USBDevice/USBDevice/* |grep TARGET |grep -v NXP |xargs rm -rf
+
 hg clone http://developer.mbed.org/users/mbed_official/code/EthernetInterface/
+hg clone http://developer.mbed.org/users/mbed_official/code/lwip-eth/ EthernetInterface/lwip-eth
+hg clone http://developer.mbed.org/users/mbed_official/code/Socket/ EthernetInterface/Socket
+hg clone http://developer.mbed.org/users/mbed_official/code/lwip/ EthernetInterface/lwip
+hg clone http://developer.mbed.org/users/mbed_official/code/lwip-sys/ EthernetInterface/lwip-sys
+ls -d Library/EthernetInterface/lwip-eth/arch/* |grep -v NXP |xargs rm -rf
+
+hg clone http://developer.mbed.org/users/donatien/code/NTPClient/
 
 hg clone http://developer.mbed.org/users/okano/code/IAP/
 hg clone http://developer.mbed.org/users/neilt6/code/SDFileSystem/

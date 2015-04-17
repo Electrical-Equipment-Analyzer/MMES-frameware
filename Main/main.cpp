@@ -15,6 +15,13 @@
 
 #include "EthernetInterface.h"
 
+extern void mem() {
+    int stack;
+    int *heap = new int;
+    pc.printf("mem: stack %x, heap %x, free %x\r\n", &stack, heap, &stack - heap);
+    free(heap);
+}
+
 extern "C" void mbed_mac_address(char *mac) {
     mac[0] = 0x00;
     mac[1] = 0x02;
