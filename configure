@@ -30,7 +30,7 @@ hg clone http://developer.mbed.org/users/mbed_official/code/lwip-eth/ EthernetIn
 hg clone http://developer.mbed.org/users/mbed_official/code/Socket/ EthernetInterface/Socket
 hg clone http://developer.mbed.org/users/mbed_official/code/lwip/ EthernetInterface/lwip
 hg clone http://developer.mbed.org/users/mbed_official/code/lwip-sys/ EthernetInterface/lwip-sys
-ls -d Library/EthernetInterface/lwip-eth/arch/* |grep -v NXP |xargs rm -rf
+ls -d EthernetInterface/lwip-eth/arch/* |grep -v NXP |xargs rm -rf
 
 hg clone http://developer.mbed.org/users/donatien/code/NTPClient/
 
