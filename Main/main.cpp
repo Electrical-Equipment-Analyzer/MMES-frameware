@@ -14,54 +14,79 @@
 #include "usbctl.h"
 
 #include "EthernetInterface.h"
+#include "HTTPClient.h"
 
 extern void mem() {
-    int stack;
-    int *heap = new int;
-    pc.printf("mem: stack %x, heap %x, free %x\r\n", &stack, heap, &stack - heap);
-    free(heap);
+	int stack;
+	int *heap = new int;
+	pc.printf("mem: stack %x, heap %x, free %x\r\n", &stack, heap,
+			&stack - heap);
+	free(heap);
 }
 
 extern "C" void mbed_mac_address(char *mac) {
-    mac[0] = 0x00;
-    mac[1] = 0x02;
-    mac[2] = 0xF7;
-    mac[3] = 0xF1;
-    mac[4] = 0x91;
-    mac[5] = 0x9F;
+	mac[0] = 0x00;
+	mac[1] = 0x02;
+	mac[2] = 0xF7;
+	mac[3] = 0xF1;
+	mac[4] = 0x91;
+	mac[5] = 0x9F;
 }
 
 void test() {
-    EthernetInterface eth;
-    if (eth.getIPAddress()[0] == '\0') {
-        eth.init();
-    }
-    eth.connect();
-    pc.printf("IP Address is %s\r\n", eth.getIPAddress());
 
-    mem();
 
-    TCPSocketConnection sock;
-    sock.connect("mbed.org", 80);
 
-    char http_cmd[] = "GET /media/uploads/mbed_official/hello.txt HTTP/1.0\n\n";
-    sock.send_all(http_cmd, sizeof(http_cmd) - 1);
+	EthernetInterface eth;
+	if (eth.getIPAddress()[0] == '\0') {
+		eth.init();
+	}
+	eth.connect();
+	pc.printf("IP Address is %s\r\n", eth.getIPAddress());
 
-    char buffer[100];
-    int ret;
+	mem();
 
-    pc.printf("Received from server:\r\n");
-    while (true) {
-        ret = sock.receive(buffer, sizeof(buffer) - 1);
-        if (ret <= 0) break;
-        buffer[ret] = '\0';
-        pc.printf("%s", buffer);
-    }
-    pc.printf("====================\r\n");
+	char str[512] = "mmm\r\n";
+	HTTPMultipart outText(str);
+	HTTPText inText(str, 512);
 
-    sock.close();
+//    HTTPMap map;
+//    map.put("Hello", "World");
+//    map.put("test", "1234");
+	HTTPClient http;
 
-    eth.disconnect();
+	int ret = http.post("http://192.168.0.100:8080/MotorWeb/MotorLogger",
+			outText, &inText);
+	if (!ret) {
+		pc.printf("Page fetched successfully - read %d characters\n",
+				strlen(str));
+		pc.printf("Result: %s\n", str);
+	} else {
+		pc.printf("Error - ret = %d - HTTP return code = %d\n", ret,
+				http.getHTTPResponseCode());
+	}
+
+//    TCPSocketConnection sock;
+//    sock.connect("192.168.0.194", 5140);
+//
+//    char http_cmd[] = "GET /media/uploads/mbed_official/hello.txt HTTP/1.0\n\n";
+//    sock.send_all(http_cmd, sizeof(http_cmd) - 1);
+//
+//    char buffer[100];
+//    int ret;
+//
+//    pc.printf("Received from server:\r\n");
+//    while (true) {
+//        ret = sock.receive(buffer, sizeof(buffer) - 1);
+//        if (ret <= 0) break;
+//        buffer[ret] = '\0';
+//        pc.printf("%s", buffer);
+//    }
+//    pc.printf("====================\r\n");
+//
+//    sock.close();
+
+	eth.disconnect();
 }
 
 uint8_t led_state;
