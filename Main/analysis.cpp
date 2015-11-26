@@ -15,11 +15,16 @@ Acceleration acc;
 
 void acquire() {
     lcd.cls();
-    lcd.printf("acquiring\n");
+    lcd.printf("acquiring\r\n");
+    pc.printf("sample\r\n");
     acc.sample();
+    pc.printf("count\r\n");
     acc.count();
+    pc.printf("check\r\n");
     acc.check();
+    pc.printf("log\r\n");
     acc.log();
+    pc.printf("write\r\n");
     acc.write();
     lcd.printf("%.2f %.2f %.2f", acc._v_x_rms * 1000, acc._v_y_rms * 1000, acc._v_z_rms * 1000);
     wait(2);

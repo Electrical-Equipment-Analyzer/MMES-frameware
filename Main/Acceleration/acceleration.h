@@ -31,6 +31,7 @@ class Acceleration {
          */
         Acceleration();
         
+        void test();
 
         void sample();
 
