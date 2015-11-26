@@ -28,6 +28,8 @@ class Config {
 
         Config(I2C *i2c);
 
+        void test();
+
         void set(CONFIG_TYPE type, uint16_t conf);
 
         uint16_t get(CONFIG_TYPE type);
