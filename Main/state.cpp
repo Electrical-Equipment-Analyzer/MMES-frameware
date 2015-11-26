@@ -13,6 +13,10 @@ State::State(TextLCD *lcd, Joystick *joystick, Config *conf) :
         _lcd(lcd), _joystick(joystick), _conf(conf) {
 }
 
+void State::test() {
+	_conf->test();
+}
+
 static const uint8_t dt[][2] = { { 0, 5 }, { 0, 6 }, { 0, 7 }, { 0, 8 }, { 0, 10 }, { 0, 11 }, { 0, 13 }, { 0, 14 }, {
         1, 6 }, { 1, 7 }, { 1, 9 }, { 1, 10 }, { 1, 12 }, { 1, 13 } };
 

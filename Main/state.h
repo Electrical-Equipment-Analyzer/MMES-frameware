@@ -17,6 +17,8 @@ class State {
     public:
         State(TextLCD *lcd, Joystick *joystick, Config *conf);
 
+        void test();
+
         void setting_date();
         void setting_timezone();
         void setting_motor_type();
