@@ -326,7 +326,7 @@ void Acceleration::log() {
 	char time[20];
 	strftime(time, 20, "%Y-%m-%dT%H:%M:%S", localtime(&timestamp));
 
-	SDFileSystem sd(p5, p6, p7, P0_5, "sd");
+	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
 	sd.disk_initialize();
 
 	FILE *fp = fopen("/sd/MDES/log/monitor.log", "a");
@@ -359,7 +359,7 @@ void Acceleration::write() {
 	char name[33];
 	strftime(name, 33, "/sd/MDES/data/%Y%m%d%H%M%S.adc", localtime(&timestamp));
 
-	SDFileSystem sd(p5, p6, p7, P0_5, "sd");
+	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
 	sd.disk_initialize();
 
 	FILE *fp = fopen(name, "w");

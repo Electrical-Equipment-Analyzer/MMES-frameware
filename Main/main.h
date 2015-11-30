@@ -29,5 +29,9 @@ static Config conf(&iic);
 #define FLASH_EN P2_1
 //#define FLASH_EN P0_6
 
+#define SD_EN P2_2
+//#define SD_EN P0_5
+
+
 
 #endif /* MAIN_H_ */
