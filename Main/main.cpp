@@ -16,6 +16,9 @@
 #include "EthernetInterface.h"
 #include "HTTPClient.h"
 
+#include "wave_player.h"
+#include "SDFileSystem.h"
+
 extern void mem() {
 	int stack;
 	int *heap = new int;
@@ -33,11 +36,30 @@ extern "C" void mbed_mac_address(char *mac) {
 	mac[5] = 0x9F;
 }
 
-void test() {
+AnalogOut DACout(p18);
+wave_player waver(&DACout);
 
+void test() {
+	mem();
+	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
+	sd.disk_initialize();
+	mem();
+	FILE *fp = fopen("/sd/test.wav", "r");
+	if (fp == NULL) {
+		pc.printf("File couldn't open\n");
+	}
+	mem();
+	pc.printf("File Playing\n");
+	waver.play(fp);
+	mem();
+//		fseek(fp, 0, SEEK_SET);  // set file poiter to beginning
+	fclose(fp);
+	mem();
+	sd.unmount();
+	mem();
 }
 
-void test_eth(){
+void test_eth() {
 	EthernetInterface eth;
 	if (eth.getIPAddress()[0] == '\0') {
 		eth.init();
@@ -93,7 +115,7 @@ void test_eth(){
 uint8_t led_state;
 
 DigitalOut led(P0_22);
-DigitalOut led_b(P0_26);
+DigitalOut led_b(P0_20);
 DigitalOut led_r(P2_0);
 DigitalOut led_g(P2_1);
 void led2_thread() {
@@ -145,6 +167,12 @@ int main() {
 	lcd.printf(" Motor Detector");
 	wait(1);
 
+//	while (1) {
+//		 mem();
+//        test();
+//
+//	}
+
 	Ticker led;
 	led.attach(led2_thread, 0.5);
 
@@ -190,7 +218,8 @@ int main() {
 	menu_about.add(Selection(NULL, 1, NULL, " Version: 0.1"));
 
 	// Selections to the root menu should be added last
-	FunctionPointer fun_test(&state, &State::test);
+//	FunctionPointer fun_test(&state, &State::test);
+	FunctionPointer fun_test(&test);
 	menu_root.add(Selection(NULL, 0, &menu_test, menu_test.menuID));
 	menu_root.add(Selection(NULL, 1, &menu_status, menu_status.menuID));
 	menu_root.add(Selection(NULL, 2, &menu_setting, menu_setting.menuID));
