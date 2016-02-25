@@ -59,6 +59,9 @@ void test() {
 	mem();
 }
 
+#include "HTTPSOAP.h"
+#include "Base64.h"
+
 void test_eth() {
 	EthernetInterface eth;
 	if (eth.getIPAddress()[0] == '\0') {
@@ -68,9 +71,47 @@ void test_eth() {
 	pc.printf("IP Address is %s\r\n", eth.getIPAddress());
 
 	mem();
+//	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
+//	sd.disk_initialize();
+//	FILE *fp = fopen("/sd/test.wav", "r");
+//	if (fp == NULL) {
+//		pc.printf("File couldn't open\n");
+//	}
+
+	const char * txt = "0123456789";
+	size_t tens;
+	char * txen;
+
+	Base64 base64;
+	txen = base64.Encode(txt, strlen(txt), &tens);
+	pc.printf(txen);
+
+	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
+	sd.disk_initialize();
+
+	FILE *source = fopen("/sd/0.txt", "r");
+	if (source == NULL) {
+		pc.printf("Could not open file\r\n");
+	}
+
+	FILE *base = fopen("/sd/0.tmp", "w");
+	if (base == NULL) {
+		pc.printf("Could not open file\r\n");
+	}
+
+	base64.Encode(base, source);
+
+	fclose(source);
+	fclose(base);
+
+	FILE *file_base = fopen("/sd/test.txt", "r");
+	if (file_base == NULL) {
+		pc.printf("Could not open file\r\n");
+	}
 
 	char str[512] = "mmm\r\n";
-	HTTPMultipart outText(str);
+	HTTPMultipart outText("id");
+	HTTPSOAP tt("myid", file_base);
 	HTTPText inText(str, 512);
 
 //    HTTPMap map;
@@ -78,17 +119,21 @@ void test_eth() {
 //    map.put("test", "1234");
 	HTTPClient http;
 
-	int ret = http.post("http://192.168.0.100:8080/MotorWeb/MotorLogger",
-			outText, &inText);
+	int ret = http.post("http://192.168.0.100:8080/MotorWeb/StreamingImpl", tt,
+			&inText);
+	pc.printf("Result: %s\n", str);
 	if (!ret) {
 		pc.printf("Page fetched successfully - read %d characters\n",
 				strlen(str));
-		pc.printf("Result: %s\n", str);
 	} else {
 		pc.printf("Error - ret = %d - HTTP return code = %d\n", ret,
 				http.getHTTPResponseCode());
 	}
 
+	fclose(file_base);
+	sd.unmount();
+
+//	sd.unmount();
 //    TCPSocketConnection sock;
 //    sock.connect("192.168.0.194", 5140);
 //
@@ -109,7 +154,7 @@ void test_eth() {
 //
 //    sock.close();
 
-	eth.disconnect();
+//	eth.disconnect();
 }
 
 uint8_t led_state;
@@ -219,7 +264,8 @@ int main() {
 
 	// Selections to the root menu should be added last
 //	FunctionPointer fun_test(&state, &State::test);
-	FunctionPointer fun_test(&test);
+//	FunctionPointer fun_test(&test);
+	FunctionPointer fun_test(&test_eth);
 	menu_root.add(Selection(NULL, 0, &menu_test, menu_test.menuID));
 	menu_root.add(Selection(NULL, 1, &menu_status, menu_status.menuID));
 	menu_root.add(Selection(NULL, 2, &menu_setting, menu_setting.menuID));
