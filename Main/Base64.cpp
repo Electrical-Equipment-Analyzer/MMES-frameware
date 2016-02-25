@@ -105,8 +105,6 @@ int Base64::Encode(FILE *base, FILE *source) {
 	fseek(base, mt*-1, SEEK_CUR);
 	fwrite(buff_out, 1, mt, base);
 
-//	encoded_data[*output_length] = '\0';    // as a courtesy to text users
-
 	return 0;
 }
 
