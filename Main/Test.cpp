@@ -7,8 +7,9 @@
 
 #include "Test.h"
 #include "main.h"
+#include "Selection.h"
 
-extern void mem() {
+void mem() {
 	int stack;
 	int *heap = new int;
 	pc.printf("mem: stack %x, heap %x, free %x\r\n", &stack, heap,
@@ -22,24 +23,23 @@ extern void mem() {
 AnalogOut DACout(p18);
 wave_player waver(&DACout);
 
-void test() {
+void test_wav() {
 	mem();
 	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
 	sd.disk_initialize();
-	mem();
+
 	FILE *fp = fopen("/sd/test.wav", "r");
 	if (fp == NULL) {
 		pc.printf("File couldn't open\n");
 	}
-	mem();
+
 	pc.printf("File Playing\n");
+	lcd.cls();
+	lcd.printf("Audio Testing");
 	waver.play(fp);
-	mem();
-//		fseek(fp, 0, SEEK_SET);  // set file poiter to beginning
+
 	fclose(fp);
-	mem();
 	sd.unmount();
-	mem();
 }
 
 #include "EthernetInterface.h"
@@ -47,63 +47,71 @@ void test() {
 #include "HTTPSOAP.h"
 #include "Base64.h"
 
+void stat() {
+	uint32_t s = LPC_EMAC->Status;
+	pc.printf("S:%x", s);
+}
+
 void test_eth() {
+	mem();
 	EthernetInterface eth;
+	mem();
 	if (eth.getIPAddress()[0] == '\0') {
 		eth.init();
 	}
+	mem();
 	eth.connect();
+	mem();
 	pc.printf("IP Address is %s\r\n", eth.getIPAddress());
+	mem();
+
+//	const char * txt = "0123456789";
+//	size_t tens;
+//	char * txen;
+
+//	mem();
+	Base64 base64;
+//	txen = base64.Encode(txt, strlen(txt), &tens);
+//	pc.printf(txen);
 
 	mem();
-//	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
-//	sd.disk_initialize();
-//	FILE *fp = fopen("/sd/test.wav", "r");
-//	if (fp == NULL) {
-//		pc.printf("File couldn't open\n");
-//	}
-
-	const char * txt = "0123456789";
-	size_t tens;
-	char * txen;
-
-	Base64 base64;
-	txen = base64.Encode(txt, strlen(txt), &tens);
-	pc.printf(txen);
-
 	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
 	sd.disk_initialize();
 
+	mem();
 	FILE *source = fopen("/sd/0.txt", "r");
 	if (source == NULL) {
 		pc.printf("Could not open file\r\n");
 	}
 
+	mem();
 	FILE *base = fopen("/sd/0.tmp", "w");
 	if (base == NULL) {
 		pc.printf("Could not open file\r\n");
 	}
 
+	mem();
 	base64.Encode(base, source);
 
+	mem();
 	fclose(source);
 	fclose(base);
 
+	mem();
 	FILE *file_base = fopen("/sd/test.txt", "r");
 	if (file_base == NULL) {
 		pc.printf("Could not open file\r\n");
 	}
 
+	mem();
 	char str[512] = "mmm\r\n";
 	HTTPMultipart outText("id");
 	HTTPSOAP tt("myid", file_base);
 	HTTPText inText(str, 512);
 
-//    HTTPMap map;
-//    map.put("Hello", "World");
-//    map.put("test", "1234");
 	HTTPClient http;
 
+	mem();
 	int ret = http.post("http://192.168.0.100:8080/MotorWeb/StreamingImpl", tt,
 			&inText);
 	pc.printf("Result: %s\n", str);
@@ -115,31 +123,28 @@ void test_eth() {
 				http.getHTTPResponseCode());
 	}
 
+	mem();
 	fclose(file_base);
+
+	mem();
 	sd.unmount();
 
-//	sd.unmount();
-//    TCPSocketConnection sock;
-//    sock.connect("192.168.0.194", 5140);
-//
-//    char http_cmd[] = "GET /media/uploads/mbed_official/hello.txt HTTP/1.0\n\n";
-//    sock.send_all(http_cmd, sizeof(http_cmd) - 1);
-//
-//    char buffer[100];
-//    int ret;
-//
-//    pc.printf("Received from server:\r\n");
-//    while (true) {
-//        ret = sock.receive(buffer, sizeof(buffer) - 1);
-//        if (ret <= 0) break;
-//        buffer[ret] = '\0';
-//        pc.printf("%s", buffer);
-//    }
-//    pc.printf("====================\r\n");
-//
-//    sock.close();
-
-//	eth.disconnect();
+	mem();
+	eth.disconnect();
+	mem();
 }
 
+const char * TXT_MENU = "Develop Test";
 
+FunctionPointer fun_eth(&test_eth);
+FunctionPointer fun_wav(&test_wav);
+
+Test::Test(Menu *parent) :
+		m_menu(TXT_MENU, parent) {
+	m_menu.add(Selection(&fun_eth, 0, NULL, " Ethernet"));
+	m_menu.add(Selection(&fun_wav, 1, NULL, " Audio"));
+}
+
+Menu *Test::getMenu() {
+	return &m_menu;
+}

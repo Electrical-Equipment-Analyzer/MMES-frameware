@@ -8,8 +8,22 @@
 #ifndef TEST_H_
 #define TEST_H_
 
-void test();
-void test_eth();
+#include "Menu.h"
 
+class Test {
+public:
+
+	Test(Menu *parent);
+
+	Menu *getMenu();
+
+//	void test();
+//	void test_eth();
+
+private:
+
+	Menu m_menu;
+
+};
 
 #endif /* TEST_H_ */

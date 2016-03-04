@@ -13,18 +13,13 @@
 #include "analysis.h"
 #include "usbctl.h"
 
-
-
 #include "Test.h"
+#include "eth_status.h"
 
+const char macaddr[] = {0x00, 0x02, 0xF7, 0xF1, 0x91, 0x9F} ;
 
 extern "C" void mbed_mac_address(char *mac) {
-	mac[0] = 0x00;
-	mac[1] = 0x02;
-	mac[2] = 0xF7;
-	mac[3] = 0xF1;
-	mac[4] = 0x91;
-	mac[5] = 0x9F;
+	memcpy(mac, macaddr, 6);
 }
 
 uint8_t led_state;
@@ -57,6 +52,11 @@ void led2_thread() {
 		led_r = 1;
 		break;
 	}
+//	if (get_link_status()) {
+//		pc.printf("link up\n");
+//	} else {
+//		pc.printf("link down");
+//	}
 }
 
 uint8_t minute;
@@ -81,12 +81,6 @@ int main() {
 	lcd.setAddress(0, 1);
 	lcd.printf(" Motor Detector");
 	wait(1);
-
-//	while (1) {
-//		 mem();
-//        test();
-//
-//	}
 
 	Ticker led;
 	led.attach(led2_thread, 0.5);
@@ -133,14 +127,13 @@ int main() {
 	menu_about.add(Selection(NULL, 1, NULL, " Version: 0.1"));
 
 	// Selections to the root menu should be added last
-//	FunctionPointer fun_test(&state, &State::test);
-//	FunctionPointer fun_test(&test);
-	FunctionPointer fun_test(&test_eth);
+
+	Test test(&menu_root);
 	menu_root.add(Selection(NULL, 0, &menu_test, menu_test.menuID));
 	menu_root.add(Selection(NULL, 1, &menu_status, menu_status.menuID));
 	menu_root.add(Selection(NULL, 2, &menu_setting, menu_setting.menuID));
 	menu_root.add(Selection(NULL, 3, &menu_about, menu_about.menuID));
-	menu_root.add(Selection(&fun_test, 4, NULL, "Develop Test"));
+	menu_root.add(Selection(NULL, 4, test.getMenu(), "Develop Test"));
 
 	// Here is the heart of the system: the navigator.
 	// The navigator takes in a reference to the root, an interface, and a reference to an lcd

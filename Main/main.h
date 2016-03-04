@@ -32,6 +32,7 @@ static Config conf(&iic);
 #define SD_EN P2_2
 //#define SD_EN P0_5
 
+void mem();
 
 
 #endif /* MAIN_H_ */
