@@ -14,7 +14,6 @@
 #include "usbctl.h"
 
 #include "Test.h"
-#include "eth_status.h"
 
 const char macaddr[] = {0x00, 0x02, 0xF7, 0xF1, 0x91, 0x9F} ;
 
@@ -90,13 +89,12 @@ int main() {
 	//User Menu
 	Menu menu_root(" Motor Detector", NULL);
 
-	FunctionPointer fun_iso(&test_ISO);
-	FunctionPointer fun_nema(&test_NEMA);
+	FunctionPointer fun_mdes(&test_ISO);
 
 	//Menu - Run Test
-	Menu menu_test(" Run Test", &menu_root);
-	menu_test.add(Selection(&fun_iso, 0, NULL, " ISO-10816")); // ISO-10816
-	menu_test.add(Selection(&fun_nema, 1, NULL, " NEMA MG1")); // NEMA MG1
+//	Menu menu_test(" Run Test", &menu_root);
+//	menu_test.add(Selection(&fun_iso, 0, NULL, " ISO-10816")); // ISO-10816
+//	menu_test.add(Selection(&fun_nema, 1, NULL, " NEMA MG1")); // NEMA MG1
 
 	//Menu - Status
 	Menu menu_status(" Status", &menu_root);
@@ -129,7 +127,7 @@ int main() {
 	// Selections to the root menu should be added last
 
 	Test test(&menu_root);
-	menu_root.add(Selection(NULL, 0, &menu_test, menu_test.menuID));
+	menu_root.add(Selection(&fun_mdes, 0, NULL, "Run Test"));
 	menu_root.add(Selection(NULL, 1, &menu_status, menu_status.menuID));
 	menu_root.add(Selection(NULL, 2, &menu_setting, menu_setting.menuID));
 	menu_root.add(Selection(NULL, 3, &menu_about, menu_about.menuID));

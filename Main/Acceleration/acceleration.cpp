@@ -58,14 +58,21 @@ void Acceleration::test() {
 }
 
 void Acceleration::sample() {
-
+//	mem();
 	uint16_t x[_length];
 	uint16_t y[_length];
 	uint16_t z[_length];
+//	uint16_t *x;
+//	uint16_t *y;
+//	uint16_t *z;
+//	x = (uint16_t*) malloc(sizeof(uint16_t) * _length);
+//	y = (uint16_t*) malloc(sizeof(uint16_t) * _length);
+//	z = (uint16_t*) malloc(sizeof(uint16_t) * _length);
+//	mem();
 
 	uint16_t i;
 	_timestamp = time(NULL);
-	Sampling sampling(A4, A5, P0_3);
+	Sampling sampling(A4, A5, P0_3, _length);
 	sampling.setbuf(x, y, z);
 	sampling.start(1000000.0f / _sps);
 	while (!sampling.isStop()) {
@@ -78,6 +85,9 @@ void Acceleration::sample() {
 	flash.writeBuffer(_flash_page_adc_z, z, sizeof(z));
 
 	sampling.setbuf(NULL, NULL, NULL);
+//    free(x);
+//    free(y);
+//    free(z);
 }
 
 double math_vac_g(double vac) {
@@ -104,7 +114,6 @@ void flash_adc_vdc(uint16_t from, uint16_t to, uint16_t length) {
 		offset += ps;
 	}
 }
-
 void flash_vdc_vac(uint16_t from, uint16_t to, uint16_t length) {
 	uint16_t ps = flash.getInfo()->pageSize;
 	uint16_t i;
