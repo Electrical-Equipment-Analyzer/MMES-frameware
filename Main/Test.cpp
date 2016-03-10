@@ -134,15 +134,51 @@ void test_eth() {
 	mem();
 }
 
+#include "SerRAM.h"
+
+void test_ram() {
+	lcd.cls();
+	lcd.printf("SRAM Testing");
+	pc.printf("sram");
+	SerRAM sram(P1_24, P1_23, P1_20, P1_21, 1024);
+	uint8_t i;
+	uint8_t d[] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34};
+	uint8_t r[10];
+	pc.printf("read:");
+	sram.read(0, (char*) &r, 10, false);
+	for(i = 0; i < 10; i++) {
+		pc.printf(" %x", r[i]);
+	}
+	pc.printf("\r\n");
+	pc.printf("write\r\n");
+	sram.write(0,(char*) &d, 10, false);
+	pc.printf("read:");
+	sram.read(0,(char*) &r, 10, false);
+	for(i = 0; i < 10; i++) {
+		pc.printf(" %x", r[i]);
+	}
+	pc.printf("\r\n");
+	pc.printf("read:");
+	sram.read(1,(char*) &r, 10, false);
+	for(i = 0; i < 10; i++) {
+		pc.printf(" %x", r[i]);
+	}
+	pc.printf("\r\n");
+//	int r = sram.read(0);
+//	pc.printf("r:%x", r);
+}
+
 const char * TXT_MENU = "Develop Test";
 
 FunctionPointer fun_eth(&test_eth);
 FunctionPointer fun_wav(&test_wav);
+FunctionPointer fun_ram(&test_ram);
 
 Test::Test(Menu *parent) :
 		m_menu(TXT_MENU, parent) {
 	m_menu.add(Selection(&fun_eth, 0, NULL, " Ethernet"));
 	m_menu.add(Selection(&fun_wav, 1, NULL, " Audio"));
+	m_menu.add(Selection(&fun_ram, 2, NULL, " SRAM"));
 }
 
 Menu *Test::getMenu() {

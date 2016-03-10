@@ -32,7 +32,8 @@ static TextLCD lcd(P1_19, P1_20, P1_25, P1_26, P1_27, P1_28, TextLCD::LCD16x2);
 #else
 
 static Joystick joystick(P2_3, P0_15, P2_4, P0_16, P0_17);
-static TextLCD lcd(P1_18, P1_19, P1_20, P1_21, P1_22, P1_23, TextLCD::LCD16x2);
+//static TextLCD lcd(P1_18, P1_19, P1_20, P1_21, P1_22, P1_23, TextLCD::LCD16x2);
+static TextLCD lcd(P1_18, P1_19, P1_26, P1_27, P1_28, P1_29, TextLCD::LCD16x2);
 #define FLASH_EN P2_1
 #define SD_EN P2_2
 
