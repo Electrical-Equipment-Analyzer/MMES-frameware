@@ -51,13 +51,16 @@ class Acceleration {
 
         time_t _timestamp;
         uint32_t _sps;
-        uint16_t _length;
+        size_t _length;
         uint8_t _channels;
         float _adc_high;
         float _adc_low;
         uint8_t _adc_bit;
         float _rate;
         char _tag[8];
+
+
+    	SerRAM _sram;
 
 };
 

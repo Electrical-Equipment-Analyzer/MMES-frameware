@@ -31,9 +31,9 @@ ATD45DB161D flash(&spi, FLASH_EN);
 #define _flash_page_s_y 896
 #define _flash_page_s_z 960
 
-Acceleration::Acceleration() {
+Acceleration::Acceleration() : _sram(P1_24, P1_23, P1_20, P1_21, 1024) {
 	_sps = 10000;
-	_length = 2112;
+	_length = 1000;
 	_channels = 3;
 	_adc_high = 3.3;
 	_adc_low = 0;
@@ -59,9 +59,9 @@ void Acceleration::test() {
 
 void Acceleration::sample() {
 //	mem();
-	uint16_t x[_length];
-	uint16_t y[_length];
-	uint16_t z[_length];
+//	uint16_t x[_length];
+//	uint16_t y[_length];
+//	uint16_t z[_length];
 //	uint16_t *x;
 //	uint16_t *y;
 //	uint16_t *z;
@@ -70,21 +70,23 @@ void Acceleration::sample() {
 //	z = (uint16_t*) malloc(sizeof(uint16_t) * _length);
 //	mem();
 
-	uint16_t i;
+	size_t i;
 	_timestamp = time(NULL);
-	Sampling sampling(A4, A5, P0_3, _length);
-	sampling.setbuf(x, y, z);
+	Sampling sampling(A4, A5, P0_3, _sram, _length);
+//	sampling.setbuf(x, y, z);
 	sampling.start(1000000.0f / _sps);
 	while (!sampling.isStop()) {
 	}
-	for (i = 2; i < 128; i++) {
-		flash.BlockErase(i);
-	}
-	flash.writeBuffer(_flash_page_adc_x, x, sizeof(x));
-	flash.writeBuffer(_flash_page_adc_y, y, sizeof(y));
-	flash.writeBuffer(_flash_page_adc_z, z, sizeof(z));
+//	for (i = 2; i < 128; i++) {
+//		flash.BlockErase(i);
+//	}
+//	flash.writeBuffer(_flash_page_adc_x, x, sizeof(x));
+//	flash.writeBuffer(_flash_page_adc_y, y, sizeof(y));
+//	flash.writeBuffer(_flash_page_adc_z, z, sizeof(z));
 
-	sampling.setbuf(NULL, NULL, NULL);
+//	sampling.setbuf(NULL, NULL, NULL);
+
+	sampling.print();
 //    free(x);
 //    free(y);
 //    free(z);
