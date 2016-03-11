@@ -72,7 +72,8 @@ void Acceleration::sample() {
 
 	size_t i;
 	_timestamp = time(NULL);
-	Sampling sampling(A4, A5, P0_3, _sram, _length);
+//	Sampling sampling(A4, A5, P0_3, _sram, _length);
+	Sampling sampling(A0, A1, A2, _sram, _length);
 //	sampling.setbuf(x, y, z);
 	sampling.start(1000000.0f / _sps);
 	while (!sampling.isStop()) {

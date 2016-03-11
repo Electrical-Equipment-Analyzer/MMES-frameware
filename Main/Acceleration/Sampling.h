@@ -11,6 +11,7 @@
 //required to use mbed functions
 #include "mbed.h"
 
+#include "FastAnalogIn.h"
 #include "SerRAM.h"
 
 #define MAX_SAMPLING_LENGTH 2112
@@ -54,7 +55,8 @@ class Sampling {
 
         /** Regular mbed pins bus
          */
-        AnalogIn _x, _y, _z;
+        FastAnalogIn _x, _y, _z;
+//        AnalogIn _x, _y, _z;
     	SerRAM _sram;
     	size_t _length;
     	size_t _index;
