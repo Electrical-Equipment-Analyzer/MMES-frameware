@@ -32,7 +32,7 @@ ATD45DB161D flash(&spi, FLASH_EN);
 #define _flash_page_s_z 960
 
 Acceleration::Acceleration() : _sram(P1_24, P1_23, P1_20, P1_21, 1024) {
-	_sps = 10000;
+	_sps = 32000;
 	_length = 1000;
 	_channels = 3;
 	_adc_high = 3.3;
