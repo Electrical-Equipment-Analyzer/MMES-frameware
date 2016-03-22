@@ -25,7 +25,8 @@ wave_player waver(&DACout);
 
 void test_wav() {
 	mem();
-	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
+//	SDFileSystem sd(P0_18, P0_17, P0_15, P0_16, "sd");
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, "sd");
 	sd.disk_initialize();
 
 	FILE *fp = fopen("/sd/test.wav", "r");
@@ -75,7 +76,7 @@ void test_eth() {
 //	pc.printf(txen);
 
 	mem();
-	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, "sd");
 	sd.disk_initialize();
 
 	mem();
