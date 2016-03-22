@@ -15,7 +15,7 @@
 
 #include "Test.h"
 
-const char macaddr[] = {0x00, 0x02, 0xF7, 0xF1, 0x91, 0x9F} ;
+const char macaddr[] = { 0x00, 0x02, 0xF7, 0xF1, 0x91, 0x9F };
 
 extern "C" void mbed_mac_address(char *mac) {
 	memcpy(mac, macaddr, 6);
@@ -58,6 +58,19 @@ void led2_thread() {
 //	}
 }
 
+#include "NTPClient.h"
+
+void ntp() {
+	NTPClient ntp;
+	pc.printf("Trying to update time...\r\n");
+	if (ntp.setTime("0.pool.ntp.org") == 0) {
+		pc.printf("Set time successfully\r\n");
+		time_t ctTime;
+		ctTime = time(NULL);
+		pc.printf("Time is set to (UTC): %s\r\n", ctime(&ctTime));
+	}
+}
+
 uint8_t minute;
 
 //DigitalOut LCD_PW(P1_18);
@@ -81,6 +94,14 @@ int main() {
 	lcd.printf(" Motor Detector");
 	wait(1);
 
+	eth.init();
+	eth.connect();
+	lcd.cls();
+	lcd.printf("IP Address:\n%s", eth.getIPAddress());
+	pc.printf("IP Address is %s\r\n", eth.getIPAddress());
+	ntp();
+	wait(5);
+
 	Ticker led;
 	led.attach(led2_thread, 0.5);
 
@@ -96,7 +117,7 @@ int main() {
 //	menu_test.add(Selection(&fun_iso, 0, NULL, " ISO-10816")); // ISO-10816
 //	menu_test.add(Selection(&fun_nema, 1, NULL, " NEMA MG1")); // NEMA MG1
 
-	//Menu - Status
+//Menu - Status
 	Menu menu_status(" Status", &menu_root);
 	menu_status.add(Selection(NULL, 0, NULL, " OK"));
 	menu_status.add(Selection(NULL, 1, NULL, " XYZ"));
@@ -161,6 +182,5 @@ int main() {
 			navigator.printMenu();
 		}
 		joystick.poll();
-
 	}
 }

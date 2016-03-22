@@ -15,6 +15,7 @@
 #include "config.h"
 
 #include "SDFileSystem.h"
+#include "EthernetInterface.h"
 
 //#define BOARD_V1_0
 
@@ -23,6 +24,8 @@ static Serial pc(P0_0, P0_1);
 static SPI spi(p5, p6, p7);
 static I2C iic(P0_19, P0_20);
 static Config conf(&iic);
+
+static EthernetInterface eth;
 
 #ifdef BOARD_V1_0
 
