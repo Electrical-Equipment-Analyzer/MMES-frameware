@@ -1,292 +1,206 @@
 #include "acceleration.h"
 #include "main.h"
 
-#include "at45db161d.h"
-ATD45DB161D flash(&spi, FLASH_EN);
-
 #include "SDFileSystem.h"
 
-#define _flash_page_adc_x 16
-#define _flash_page_adc_y 32
-#define _flash_page_adc_z 48
-
-#define _flash_page_vdc_x 64
-#define _flash_page_vdc_y 128
-#define _flash_page_vdc_z 192
-#define _flash_page_vac_x 256
-#define _flash_page_vac_y 320
-#define _flash_page_vac_z 384
-
-#define _flash_page_g_x 256
-#define _flash_page_g_y 320
-#define _flash_page_g_z 384
-
-#define _flash_page_a_x 448
-#define _flash_page_a_y 512
-#define _flash_page_a_z 576
-#define _flash_page_v_x 640
-#define _flash_page_v_y 704
-#define _flash_page_v_z 768
-#define _flash_page_s_x 832
-#define _flash_page_s_y 896
-#define _flash_page_s_z 960
-
-Acceleration::Acceleration() : _sram(P1_24, P1_23, P1_20, P1_21, 1024) {
-	_sps = 32000;
-	_length = 1000;
-	_channels = 3;
-	_adc_high = 3.3;
-	_adc_low = 0;
-	_adc_bit = 12;
-	_rate = 0.016;
-	strcpy(_tag, "g");
+Acceleration::Acceleration() :
+		_sram(P1_24, P1_23, P1_20, P1_21, 1024) {
 }
 
 void Acceleration::test() {
 	pc.printf("class Acceleration : flash test start");
-	uint16_t d[_length];
+	uint16_t d[_file.length];
 	uint16_t i;
-	for (i = 0; i < _length; i++) {
+	for (i = 0; i < _file.length; i++) {
 		d[i] = i;
 	}
 	pc.printf("class Acceleration : write");
-	flash.writeBuffer(0, d, sizeof(d));
-	pc.printf("class Acceleration : read");
-	flash.readBuffer(0, d, sizeof(d));
+//	flash.writeBuffer(0, d, sizeof(d));
+//	pc.printf("class Acceleration : read");
+//	flash.readBuffer(0, d, sizeof(d));
 
 	pc.printf("class Acceleration : flash test end");
 }
 
 void Acceleration::sample() {
-//	mem();
-//	uint16_t x[_length];
-//	uint16_t y[_length];
-//	uint16_t z[_length];
-//	uint16_t *x;
-//	uint16_t *y;
-//	uint16_t *z;
-//	x = (uint16_t*) malloc(sizeof(uint16_t) * _length);
-//	y = (uint16_t*) malloc(sizeof(uint16_t) * _length);
-//	z = (uint16_t*) malloc(sizeof(uint16_t) * _length);
-//	mem();
-
-	size_t i;
-	_timestamp = time(NULL);
-//	Sampling sampling(A4, A5, P0_3, _sram, _length);
-	Sampling sampling(A0, A1, A2, _sram, _length);
-//	sampling.setbuf(x, y, z);
-	sampling.start(1000000.0f / _sps);
+	Sampling sampling(A0, A1, A2, _sram, _file.length);
+	_file.timestamp = time(NULL);
+	sampling.start(1000000.0f / _file.sps);
 	while (!sampling.isStop()) {
 	}
-//	for (i = 2; i < 128; i++) {
-//		flash.BlockErase(i);
-//	}
-//	flash.writeBuffer(_flash_page_adc_x, x, sizeof(x));
-//	flash.writeBuffer(_flash_page_adc_y, y, sizeof(y));
-//	flash.writeBuffer(_flash_page_adc_z, z, sizeof(z));
-
-//	sampling.setbuf(NULL, NULL, NULL);
-
-	sampling.print();
-//    free(x);
-//    free(y);
-//    free(z);
+//	sampling.print();
 }
 
-double math_vac_g(double vac) {
-	return vac / 0.016;
+void fileName(time_t time, char* name) {
+	int16_t timezone = conf.get(Config::TIMEZONE);
+	time_t timestamp = time + (timezone * 60);
+	strftime(name, 33, "/sd/MDES/data/%Y%m%d%H%M%S.adc", localtime(&timestamp));
 }
 
-double math_g_a(double g) {
-	return g * 9.80665;
-}
+#define buff_len 8
 
-void flash_adc_vdc(uint16_t from, uint16_t to, uint16_t length) {
-	uint16_t i;
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t offset = 0;
-	while (offset < length) {
-		uint16_t row[ps];
-		double d[ps];
-		flash.readBuffer(from + (sizeof(uint16_t) * offset / ps), row,
-				sizeof(row));
-		for (i = 0; i < ps; i++) {
-			d[i] = row[i] * 3.3f / 0xFFF;
-		}
-		flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
-		offset += ps;
-	}
-}
-void flash_vdc_vac(uint16_t from, uint16_t to, uint16_t length) {
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t i;
-	uint16_t offset;
+double Acceleration::sram_vac(uint8_t ch) {
+	char name[33];
+	fileName(_file.timestamp, (char*) &name);
+
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, NAME_SD);
+	sd.disk_initialize();
+
 	double avg = 0;
-	offset = 0;
-	while (offset < length) {
-		double d[ps];
-		flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
-		for (i = 0; i < ps; i++) {
-			avg += d[i];
+
+	pc.printf("Read file : %s\r\n", name);
+	FILE *fp = fopen(name, "r");
+	if (fp == NULL) {
+		pc.printf("Could not open file for write\r\n");
+	} else {
+		fseek(fp, sizeof(FileADC), SEEK_SET);
+		fseek(fp, sizeof(uint16_t) * ch, SEEK_CUR);
+		size_t i, j;
+		uint16_t null[2];
+		uint16_t buff_i;
+		float buff[buff_len];
+		size_t buff_size = sizeof(buff), addr_size = _file.length
+				* sizeof(float);
+		for (i = 0; i < addr_size; i += buff_size) {
+			for (j = 0; j < buff_len; j++) {
+				fread(&buff_i, sizeof(uint16_t), 1, fp);
+				fread(&null, sizeof(uint16_t), 2, fp);
+				buff[j] = buff_i * 3.3f / 0xFFF;
+				avg += buff[j];
+			}
+			_sram.write(i, &buff, buff_size, false);
 		}
-		offset += ps;
+		fclose(fp);
 	}
-	avg /= length;
-	pc.printf("avg : %f\r\n", avg);
-	offset = 0;
-	while (offset < length) {
-		double d[ps];
-		flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
-		for (i = 0; i < ps; i++) {
-			d[i] -= avg;
+
+	sd.unmount();
+	avg /= _file.length;
+	return avg;
+}
+
+void Acceleration::sram_vdc(double avg) {
+	float buff[buff_len];
+	size_t i, j;
+	size_t buff_size = sizeof(buff), addr_size = _file.length * sizeof(float);
+	for (i = 0; i < addr_size; i += buff_size) {
+		_sram.read(i, &buff, buff_size, false);
+		for (j = 0; j < buff_len; j++) {
+			buff[j] -= avg;
+			buff[j] *= _file.rate;
 		}
-		flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
-		offset += ps;
+		_sram.write(i, &buff, buff_size, false);
 	}
 }
 
-void flash_function(uint16_t from, uint16_t to, uint16_t length,
-		double (*fun)(double)) {
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t i;
-	uint16_t offset = 0;
-	while (offset < length) {
-		double d[ps];
-		flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
-		for (i = 0; i < ps; i++) {
-			d[i] = fun(d[i]);
+void Acceleration::sram_integral() {
+	float buff[8];
+	double d = 0, t = 1.0 / _file.sps;
+	size_t i, j;
+	size_t buff_size = sizeof(buff), addr_size = _file.length * sizeof(float);
+	for (i = 0; i < addr_size; i += buff_size) {
+		_sram.read(i, &buff, buff_size, false);
+		for (j = 0; j < 8; j++) {
+			d += buff[j] * t;
+			buff[j] = d;
 		}
-		flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
-		offset += ps;
+		_sram.write(i, &buff, buff_size, false);
 	}
 }
 
-void flash_integral(uint16_t from, uint16_t to, uint16_t length, double t) {
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t i;
-	uint16_t offset = 0;
-	double v = 0;
-	while (offset < length) {
-		double d[ps];
-		flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
-		for (i = 0; i < ps; i++) {
-			v += d[i] * t;
-			d[i] = v;
-		}
-		flash.writeBuffer(to + (sizeof(double) * offset / ps), d, sizeof(d));
-		offset += ps;
-	}
-}
-
-double flash_rms(uint16_t from, uint16_t length) {
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t i;
-	uint16_t offset = 0;
+double Acceleration::sram_rms() {
+	float buff[8];
 	double sum = 0;
-	while (offset < length) {
-		double d[ps];
-		flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
-		for (i = 0; i < ps; i++) {
-			sum += d[i] * d[i];
+	size_t i, j;
+	size_t buff_size = sizeof(buff), addr_size = _file.length * sizeof(float);
+	for (i = 0; i < addr_size; i += buff_size) {
+		_sram.read(i, &buff, buff_size, false);
+		for (j = 0; j < 8; j++) {
+			sum += buff[j] * buff[j];
 		}
-		offset += ps;
 	}
-	return sqrt(sum / length);
+	return sqrt(sum / _file.length);
 }
 
-double flash_vpp(uint16_t from, uint16_t length) {
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t i;
-	uint16_t offset = 0;
-	double max;
-	double min;
-	while (offset < length) {
-		double d[ps];
-		flash.readBuffer(from + (sizeof(double) * offset / ps), d, sizeof(d));
-		for (i = 0; i < ps; i++) {
-			max = max > d[i] ? max : d[i];
-			min = min < d[i] ? min : d[i];
+double Acceleration::sram_vpp() {
+	float buff[8];
+	double max, min;
+	size_t i, j;
+	size_t buff_size = sizeof(buff), addr_size = _file.length * sizeof(float);
+	for (i = 0; i < addr_size; i += buff_size) {
+		_sram.read(i, &buff, buff_size, false);
+		for (j = 0; j < 8; j++) {
+			max = max > buff[j] ? max : buff[j];
+			min = min < buff[j] ? min : buff[j];
 		}
-		offset += ps;
 	}
 	return max - min;
 }
 
-void flash_print(uint16_t addr_x, uint16_t addr_y, uint16_t addr_z,
-		uint16_t length) {
-	uint16_t i;
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t offset = 0;
-	while (offset < length) {
-		double x[ps];
-		double y[ps];
-		double z[ps];
-		flash.readBuffer(addr_x + (sizeof(double) * offset / ps), x, sizeof(x));
-		flash.readBuffer(addr_y + (sizeof(double) * offset / ps), y, sizeof(y));
-		flash.readBuffer(addr_z + (sizeof(double) * offset / ps), z, sizeof(z));
-		for (i = 0; i < ps; i++) {
-			pc.printf("%d : %f, %f, %f, \r\n", i + offset, x[i], y[i], z[i]);
-			wait_ms(10);
-		}
-		offset += ps;
+void Acceleration::sram_print(size_t length) {
+	pc.printf("print sram\r\n");
+	size_t i;
+	float buff;
+	for (i = 0; i < length; i++) {
+		_sram.read(i * sizeof(buff), &buff, sizeof(buff), false);
+		pc.printf("%d: %f\r\n", i, buff);
+		wait_ms(5);
 	}
 }
 
+void Acceleration::sram_file() {
+	char name[33];
+	fileName(_file.timestamp, (char*) &name);
+	strcpy(&name[29], "tmp");
+
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, NAME_SD);
+	sd.disk_initialize();
+
+	pc.printf("Saving file : %s\r\n", name);
+	FILE *fp = fopen(name, "a");
+	if (fp == NULL) {
+		pc.printf("Could not open file for write\r\n");
+	} else {
+		size_t i;
+		float buff;
+		for (i = 0; i < _file.length; i++) {
+			_sram.read(i * sizeof(buff), &buff, sizeof(buff), false);
+			fprintf(fp, "%f, ", buff);
+		}
+		fprintf(fp, "\r\n");
+		fclose(fp);
+	}
+
+	sd.unmount();
+}
+
 void Acceleration::count() {
-//	flash_print(_flash_page_vdc_x, _flash_page_vdc_y, _flash_page_vdc_z, _length);
+	double avg;
 
-	pc.printf("adc vdc\r\n");
-	flash_adc_vdc(_flash_page_adc_x, _flash_page_vdc_x, _length);
-	flash_adc_vdc(_flash_page_adc_y, _flash_page_vdc_y, _length);
-	flash_adc_vdc(_flash_page_adc_z, _flash_page_vdc_z, _length);
+	avg = sram_vac(0);
+//	sram_file();
+	sram_vdc(avg);
+//	sram_file();
+	sram_integral();
+//	sram_file();
+	_v_x_rms = sram_rms();
+	sram_integral();
+//	sram_file();
+	_s_x_vpp = sram_vpp();
 
-//	flash_print(_flash_page_vdc_x, _flash_page_vdc_y, _flash_page_vdc_z, _length);
-//	flash_print(_flash_page_vac_x, _flash_page_vac_y, _flash_page_vac_z, _length);
+	avg = sram_vac(1);
+	sram_vdc(avg);
+	sram_integral();
+	_v_y_rms = sram_rms();
+	sram_integral();
+	_s_y_vpp = sram_vpp();
 
-	pc.printf("vdc vac\r\n");
-	flash_vdc_vac(_flash_page_vdc_x, _flash_page_vac_x, _length);
-	flash_vdc_vac(_flash_page_vdc_y, _flash_page_vac_y, _length);
-	flash_vdc_vac(_flash_page_vdc_z, _flash_page_vac_z, _length);
+	avg = sram_vac(2);
+	sram_vdc(avg);
+	sram_integral();
+	_v_z_rms = sram_rms();
+	sram_integral();
+	_s_z_vpp = sram_vpp();
 
-//	flash_print(_flash_page_vac_x, _flash_page_vac_y, _flash_page_vac_z, _length);
-
-	pc.printf("vac g\r\n");
-	flash_function(_flash_page_vac_x, _flash_page_g_x, _length, &math_vac_g);
-	flash_function(_flash_page_vac_y, _flash_page_g_y, _length, &math_vac_g);
-	flash_function(_flash_page_vac_z, _flash_page_g_z, _length, &math_vac_g);
-
-	pc.printf("g a\r\n");
-	flash_function(_flash_page_g_x, _flash_page_a_x, _length, &math_g_a);
-	flash_function(_flash_page_g_y, _flash_page_a_y, _length, &math_g_a);
-	flash_function(_flash_page_g_z, _flash_page_a_z, _length, &math_g_a);
-
-	pc.printf("a v\r\n");
-	double dt = 1.0f / _sps;
-	flash_integral(_flash_page_a_x, _flash_page_v_x, _length, dt);
-	flash_integral(_flash_page_a_y, _flash_page_v_y, _length, dt);
-	flash_integral(_flash_page_a_z, _flash_page_v_z, _length, dt);
-
-	pc.printf("v s\r\n");
-	flash_integral(_flash_page_v_x, _flash_page_s_x, _length, dt);
-	flash_integral(_flash_page_v_y, _flash_page_s_y, _length, dt);
-	flash_integral(_flash_page_v_z, _flash_page_s_z, _length, dt);
-
-	pc.printf("iso\r\n");
-	_v_x_rms = flash_rms(_flash_page_v_x, _length);
-	_v_y_rms = flash_rms(_flash_page_v_y, _length);
-	_v_z_rms = flash_rms(_flash_page_v_z, _length);
-
-	pc.printf("nema\r\n");
-	_s_x_vpp = flash_vpp(_flash_page_s_x, _length);
-	_s_y_vpp = flash_vpp(_flash_page_s_y, _length);
-	_s_z_vpp = flash_vpp(_flash_page_s_z, _length);
-
-//	flash_print(_flash_page_vdc_x, _flash_page_vac_x, _flash_page_g_x, _length);
-//	flash_print(_flash_page_a_x, _flash_page_v_x, _flash_page_s_x, _length);
-//    flash_print(_flash_page_vdc_x, _flash_page_vdc_y, _flash_page_vdc_z, _length);
-//    flash_print(_flash_page_a_x, _flash_page_a_y, _flash_page_a_z, _length);
-//    flash_print(_flash_page_v_x, _flash_page_v_y, _flash_page_v_z, _length);
-//    flash_print(_flash_page_s_x, _flash_page_s_y, _flash_page_s_z, _length);
 	pc.printf("iso  : %f, %f, %f\r\n", _v_x_rms, _v_y_rms, _v_z_rms);
 	pc.printf("nema : %f, %f, %f\r\n", _s_x_vpp, _s_y_vpp, _s_z_vpp);
 }
@@ -334,11 +248,11 @@ void Acceleration::log() {
 	uint8_t hour = abs(timezone / 60);
 	char zone[7];
 	sprintf(zone, "%c%02d:%02d", (timezone < 0 ? '-' : '+'), hour, minute);
-	time_t timestamp = _timestamp + (timezone * 60);
+	time_t timestamp = _file.timestamp + (timezone * 60);
 	char time[20];
 	strftime(time, 20, "%Y-%m-%dT%H:%M:%S", localtime(&timestamp));
 
-	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, "sd");
 	sd.disk_initialize();
 
 	FILE *fp = fopen("/sd/MDES/log/monitor.log", "a");
@@ -353,43 +267,53 @@ void Acceleration::log() {
 	sd.unmount();
 }
 
-void flash_adc_file(uint16_t from, FILE *file, uint16_t length) {
-	uint16_t ps = flash.getInfo()->pageSize;
-	uint16_t offset = 0;
-	while (offset < length) {
-		uint16_t row[ps];
-		flash.readBuffer(from + (sizeof(uint16_t) * offset / ps), row,
-				sizeof(row));
-		fwrite((const void*) &row, sizeof(uint16_t), ps, file);
-		offset += ps;
-	}
-}
-
 void Acceleration::write() {
-	int16_t timezone = conf.get(Config::TIMEZONE);
-	time_t timestamp = _timestamp + (timezone * 60);
 	char name[33];
-	strftime(name, 33, "/sd/MDES/data/%Y%m%d%H%M%S.adc", localtime(&timestamp));
+	fileName(_file.timestamp, (char*) &name);
 
-	SDFileSystem sd(p5, p6, p7, SD_EN, "sd");
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, NAME_SD);
 	sd.disk_initialize();
 
+	pc.printf("Saving file : %s\r\n", name);
 	FILE *fp = fopen(name, "w");
 	if (fp == NULL) {
 		pc.printf("Could not open file for write\r\n");
 	} else {
-		fwrite((const void*) &_timestamp, sizeof(time_t), 1, fp);
-		fwrite((const void*) &_sps, sizeof(uint32_t), 1, fp);
-		fwrite((const void*) &_length, sizeof(uint16_t), 1, fp);
-		fwrite((const void*) &_channels, sizeof(uint8_t), 1, fp);
-		fwrite((const void*) &_adc_high, sizeof(float), 1, fp);
-		fwrite((const void*) &_adc_low, sizeof(float), 1, fp);
-		fwrite((const void*) &_adc_bit, sizeof(uint8_t), 1, fp);
-		fwrite((const void*) &_rate, sizeof(float), 1, fp);
-		fwrite((const void*) &_tag, sizeof(char), 8, fp);
-		flash_adc_file(_flash_page_adc_x, fp, _length);
-		flash_adc_file(_flash_page_adc_y, fp, _length);
-		flash_adc_file(_flash_page_adc_z, fp, _length);
+		fwrite((const void*) &_file, sizeof(FileADC), 1, fp);
+		size_t i;
+		uint16_t buff[3];
+		for (i = 0; i < _file.length; i++) {
+			_sram.read(i * sizeof(buff), &buff, sizeof(buff), false);
+			fwrite((const void*) &buff, sizeof(uint16_t),
+					sizeof(buff) / sizeof(uint16_t), fp);
+		}
+		fclose(fp);
+	}
+
+	sd.unmount();
+}
+
+void Acceleration::printFile() {
+	char name[33];
+	fileName(_file.timestamp, (char*) &name);
+
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, NAME_SD);
+	sd.disk_initialize();
+
+	pc.printf("Read file : %s\r\n", name);
+	FILE *fp = fopen(name, "r");
+	if (fp == NULL) {
+		pc.printf("Could not open file for write\r\n");
+	} else {
+		FileADC file_head;
+		fread(&file_head, sizeof(FileADC), 1, fp);
+		size_t i;
+		uint16_t buff[3];
+		for (i = 0; i < _file.length; i++) {
+			fread(&buff, sizeof(uint16_t), sizeof(buff) / sizeof(uint16_t), fp);
+			pc.printf("%d, %d, %d, %d\r\n", i, buff[0], buff[1], buff[2]);
+			wait_ms(5);
+		}
 		fclose(fp);
 	}
 

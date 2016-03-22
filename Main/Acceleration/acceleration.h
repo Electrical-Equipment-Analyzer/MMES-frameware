@@ -23,6 +23,20 @@
 
 class Acceleration {
     public:
+
+	typedef struct {
+
+        time_t timestamp;
+        size_t sps = 32000;
+        size_t length = 2048;
+        uint8_t channels = 3;
+        float adc_high = 3.3f;
+        float adc_low = 0;
+        uint8_t adc_bit = 12;
+		float rate = 1/0.016*9.80665;
+        char tag[8] = "a";
+	}FileADC;
+
         /** Create a Joystick HID for using regular mbed pins
          *
          * @param x    X asix
@@ -43,24 +57,24 @@ class Acceleration {
         void log();
 
         void write();
+        void printFile();
 
         double _v_x_rms, _v_y_rms, _v_z_rms;
         double _s_x_vpp, _s_y_vpp, _s_z_vpp;
 
     private:
 
-        time_t _timestamp;
-        uint32_t _sps;
-        size_t _length;
-        uint8_t _channels;
-        float _adc_high;
-        float _adc_low;
-        uint8_t _adc_bit;
-        float _rate;
-        char _tag[8];
-
+        double sram_vac(uint8_t ch);
+        void sram_vdc(double avg);
+        void sram_integral();
+        double sram_rms();
+        double sram_vpp();
+        void sram_print(size_t length);
+        void sram_file();
 
     	SerRAM _sram;
+
+    	FileADC _file;
 
 };
 

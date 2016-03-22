@@ -18,17 +18,15 @@ void acquire() {
 	lcd.printf("acquiring\n");
 	pc.printf("sample\r\n");
 	acc.sample();
-	pc.printf("count\r\n");
-	acc.count();
-	pc.printf("check\r\n");
-	acc.check();
-	pc.printf("log\r\n");
-	acc.log();
 	pc.printf("write\r\n");
 	acc.write();
-	lcd.printf("%.2f %.2f %.2f", acc._v_x_rms * 1000, acc._v_y_rms * 1000,
-			acc._v_z_rms * 1000);
-	wait(2);
+	pc.printf("count\r\n");
+	acc.count();
+//	pc.printf("check\r\n");
+//	acc.check();
+//	pc.printf("log\r\n");
+//	acc.log();
+//	acc.printFile();
 }
 
 void format_num(char *txt, float num) {
@@ -50,8 +48,8 @@ void test_ISO() {
 	acquire();
 	float data_v[3] = { acc._v_x_rms * 1000, acc._v_y_rms * 1000, acc._v_z_rms
 			* 1000 };
-	float data_s[3] = { acc._s_x_vpp, acc._s_y_vpp * 1000000, acc._s_z_vpp
-			* 1000000 };
+	float data_s[3] = { acc._s_x_vpp * 1000000, acc._s_y_vpp * 1000000,
+			acc._s_z_vpp * 1000000 };
 	uint8_t i;
 	char txt[5];
 
@@ -69,5 +67,4 @@ void test_ISO() {
 	while (joystick.getStatus() == Joystick::none)
 		;
 }
-
 

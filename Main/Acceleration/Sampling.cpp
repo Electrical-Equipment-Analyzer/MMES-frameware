@@ -28,24 +28,20 @@ bool Sampling::isStop() {
 	return !(_index < _length);
 }
 
-DigitalOut tt(P3_25);
 void Sampling::tick() {
-	tt = 0;
 	if (_index < _length) {
 		uint16_t buff[3];
-		tt = 1;
 		buff[0] = _x.read_u16() >> 4;
-		tt = 0;
 		buff[1] = _y.read_u16() >> 4;
-		tt = 1;
 		buff[2] = _z.read_u16() >> 4;
-		tt = 0;
+//		buff[0] = _index * 3;
+//		buff[1] = _index * 3 + 1;
+//		buff[2] = _index * 3 + 2;
 		_sram.write(_index * 6, &buff, sizeof(buff), false);
 		_index++;
 	} else {
 		_flipper.detach();
 	}
-	tt = 1;
 }
 
 void Sampling::print() {
