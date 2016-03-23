@@ -56,6 +56,9 @@ class Acceleration {
         void log();
 
         void write();
+        void tmpFile();
+        void eth();
+
         void printFile();
 
         double _v_x_rms, _v_y_rms, _v_z_rms;

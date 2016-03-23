@@ -293,6 +293,91 @@ void Acceleration::write() {
 	sd.unmount();
 }
 
+
+const char * TXT_XML_H = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+const char * TXT_SOAP_H =
+		"<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">";
+const char * TXT_SOAP_T = "</soap:Envelope>";
+const char * TXT_SOAP_BODY_H = "<soap:Body>";
+const char * TXT_SOAP_BODY_T = "</soap:Body>";
+const char * TXT_WM_FU_H =
+		"<ns0:fileUpload xmlns:ns0=\"http://motorweb.cloud.ee305.ntust.edu.tw/\">";
+const char * TXT_WM_FU_T = "</ns0:fileUpload>";
+const char * TXT_DATA_H = "<arg%d>";
+const char * TXT_DATA_T = "</arg%d>";
+
+
+#include "Base64.h"
+
+void Acceleration::tmpFile() {
+	char name[33];
+	fileName(_file.timestamp, (char*) &name);
+
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, NAME_SD);
+	sd.disk_initialize();
+
+	pc.printf("Temp file : %s\r\n", name);
+	FILE *pFile = fopen(name, "r");
+	if (pFile == NULL) {
+		pc.printf("Could not open file\r\n");
+	}
+
+	Base64 base64;
+	FILE *tFile = fopen("/sd/soap.tmp", "w");
+	if (tFile == NULL) {
+		pc.printf("Could not open file\r\n");
+	}
+
+	fprintf(tFile, TXT_XML_H);
+	fprintf(tFile, TXT_SOAP_H);
+	fprintf(tFile, TXT_SOAP_BODY_H);
+	fprintf(tFile, TXT_WM_FU_H);
+	fprintf(tFile, TXT_DATA_H, 0);
+	fprintf(tFile, "id");
+	fprintf(tFile, TXT_DATA_T, 0);
+	fprintf(tFile, TXT_DATA_H, 1);
+	base64.Encode(tFile, pFile);
+	fprintf(tFile, TXT_DATA_T, 1);
+	fprintf(tFile, TXT_WM_FU_T);
+	fprintf(tFile, TXT_SOAP_BODY_T);
+	fprintf(tFile, TXT_SOAP_T);
+
+	fclose(pFile);
+	fclose(tFile);
+
+	sd.unmount();
+}
+
+#include "HTTPClient.h"
+#include "HTTPFile.h"
+
+void Acceleration::eth() {
+	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, "sd");
+	sd.disk_initialize();
+
+	FILE *tFile = fopen("/sd/soap.tmp", "r");
+	if (tFile == NULL) {
+		pc.printf("Could not open file\r\n");
+	}
+
+	char str[512] = "mmm\r\n";
+	HTTPFile htFile(tFile);
+	HTTPText inText(str, 512);
+
+	HTTPClient http;
+
+	int ret = http.post("http://192.168.0.100:8080/MotorWeb/StreamingImpl", htFile, &inText);
+	pc.printf("Result: %s\n", str);
+	if (!ret) {
+		pc.printf("Page fetched successfully - read %d characters\n", strlen(str));
+	} else {
+		pc.printf("Error - ret = %d - HTTP return code = %d\n", ret, http.getHTTPResponseCode());
+	}
+	fclose(tFile);
+
+	sd.unmount();
+}
+
 void Acceleration::printFile() {
 	char name[33];
 	fileName(_file.timestamp, (char*) &name);
