@@ -62,6 +62,10 @@ void test_ISO() {
 		format_num(txt, data_s[i]);
 		lcd.printf(" %s", txt);
 	}
+	pc.printf("tmpfile\r\n");
+	acc.tmpFile();
+	pc.printf("eth\r\n");
+	acc.eth();
 	while (joystick.getStatus() == Joystick::none)
 		;
 }
