@@ -95,25 +95,25 @@ void test_eth() {
 	SDFileSystem sd(PIN_SD_SI, PIN_SD_SO, PIN_SD_CK, PIN_SD_CS, "sd");
 	sd.disk_initialize();
 
-	FILE *file_base = fopen("/sd/test.xml", "r");
-	if (file_base == NULL) {
+	FILE *tFile = fopen("/sd/test.xml", "r");
+	if (tFile == NULL) {
 		pc.printf("Could not open file\r\n");
 	}
 
 	char str[512] = "mmm\r\n";
-	HTTPFile tt(file_base);
+	HTTPFile hFile(tFile);
 	HTTPText inText(str, 512);
 
 	HTTPClient http;
 
-	int ret = http.post("http://192.168.0.100:8080/MotorWeb/StreamingImpl", tt, &inText);
+	int ret = http.post("http://192.168.0.100:8080/MotorWeb/StreamingImpl", hFile, &inText);
 	pc.printf("Result: %s\n", str);
 	if (!ret) {
 		pc.printf("Page fetched successfully - read %d characters\n", strlen(str));
 	} else {
 		pc.printf("Error - ret = %d - HTTP return code = %d\n", ret, http.getHTTPResponseCode());
 	}
-	fclose(file_base);
+	fclose(tFile);
 
 	sd.unmount();
 }
