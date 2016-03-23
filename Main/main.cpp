@@ -100,7 +100,7 @@ int main() {
 	lcd.printf("IP Address:\n%s", eth.getIPAddress());
 	pc.printf("IP Address is %s\r\n", eth.getIPAddress());
 	ntp();
-	wait(5);
+	wait(2);
 
 	Ticker led;
 	led.attach(led2_thread, 0.5);
