@@ -46,10 +46,8 @@ void test_ISO() {
 	lcd.cls();
 	lcd.printf("Processing\n");
 	acquire();
-	float data_v[3] = { acc._v_x_rms * 1000, acc._v_y_rms * 1000, acc._v_z_rms
-			* 1000 };
-	float data_s[3] = { acc._s_x_vpp * 1000000, acc._s_y_vpp * 1000000,
-			acc._s_z_vpp * 1000000 };
+	float data_v[3] = { acc._v_x_rms * 1000, acc._v_y_rms * 1000, acc._v_z_rms * 1000 };
+	float data_s[3] = { acc._s_x_vpp * 1000000, acc._s_y_vpp * 1000000, acc._s_z_vpp * 1000000 };
 	uint8_t i;
 	char txt[5];
 

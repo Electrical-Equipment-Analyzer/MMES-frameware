@@ -93,13 +93,13 @@ void Acceleration::sram_vdc(double avg) {
 }
 
 void Acceleration::sram_integral() {
-	float buff[8];
+	float buff[buff_len];
 	double d = 0, t = 1.0 / _file.sps;
 	size_t i, j;
 	size_t buff_size = sizeof(buff), addr_size = _file.length * sizeof(float);
 	for (i = 0; i < addr_size; i += buff_size) {
 		_sram.read(i, &buff, buff_size, false);
-		for (j = 0; j < 8; j++) {
+		for (j = 0; j < buff_len; j++) {
 			d += buff[j] * t;
 			buff[j] = d;
 		}

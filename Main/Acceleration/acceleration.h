@@ -51,7 +51,6 @@ class Acceleration {
 
         void count();
         
-
         void check();
 
         void log();
@@ -63,6 +62,8 @@ class Acceleration {
         double _s_x_vpp, _s_y_vpp, _s_z_vpp;
 
     private:
+    	SerRAM _sram;
+    	FileADC _file;
 
         double sram_vac(uint8_t ch);
         void sram_vdc(double avg);
@@ -71,11 +72,6 @@ class Acceleration {
         double sram_vpp();
         void sram_print(size_t length);
         void sram_file();
-
-    	SerRAM _sram;
-
-    	FileADC _file;
-
 };
 
 #endif

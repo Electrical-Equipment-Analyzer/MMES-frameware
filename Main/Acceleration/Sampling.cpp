@@ -13,12 +13,6 @@ Sampling::Sampling(PinName pin_x, PinName pin_y, PinName pin_z, SerRAM &sram, si
 	_length = length;
 }
 
-//void Sampling::setbuf(uint16_t *data_x, uint16_t *data_y, uint16_t *data_z) {
-//	x = data_x;
-//	y = data_y;
-//	z = data_z;
-//}
-
 void Sampling::start(timestamp_t us) {
 	_index = 0;
 	_flipper.attach_us(this, &Sampling::tick, us);
@@ -34,10 +28,7 @@ void Sampling::tick() {
 		buff[0] = _x.read_u16() >> 4;
 		buff[1] = _y.read_u16() >> 4;
 		buff[2] = _z.read_u16() >> 4;
-//		buff[0] = _index * 3;
-//		buff[1] = _index * 3 + 1;
-//		buff[2] = _index * 3 + 2;
-		_sram.write(_index * 6, &buff, sizeof(buff), false);
+		_sram.write(_index * sizeof(buff), &buff, sizeof(buff), false);
 		_index++;
 	} else {
 		_flipper.detach();
