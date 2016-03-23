@@ -10,9 +10,9 @@
 #include "Selection.h"
 
 void mem() {
-	int stack;
-	int *heap = new int;
-	pc.printf("mem: stack %x, heap %x, free %x\r\n", &stack, heap,
+	uint64_t stack;
+	uint64_t *heap = new uint64_t;
+	pc.printf("mem: stack %x, heap %x, free %d\r\n", &stack, heap,
 			&stack - heap);
 	free(heap);
 }
